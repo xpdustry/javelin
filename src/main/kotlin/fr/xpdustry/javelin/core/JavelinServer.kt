@@ -1,12 +1,15 @@
 package fr.xpdustry.javelin.core
 
 import arc.ApplicationListener
+import arc.Events
 import arc.util.Log
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.interfaces.JWTVerifier
+import com.google.gson.Gson
 import fr.xpdustry.javelin.core.model.Server
 import fr.xpdustry.javelin.core.repository.ServerRepository
-import fr.xpdustry.javelin.internal.JavelinConfig
+import fr.xpdustry.javelin.internal.JavelinServerConfig
+import fr.xpdustry.javelin.util.fromJson
 import org.java_websocket.WebSocket
 import org.java_websocket.drafts.Draft
 import org.java_websocket.exceptions.InvalidDataException
@@ -16,9 +19,11 @@ import org.java_websocket.handshake.ServerHandshakeBuilder
 import org.java_websocket.server.WebSocketServer
 import java.net.InetSocketAddress
 import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 class JavelinServer @Inject constructor(
-    private val config: JavelinConfig,
+    private val config: JavelinServerConfig,
     private val verifier: JWTVerifier,
     private val repository: ServerRepository
 ): ApplicationListener {
@@ -38,8 +43,8 @@ class JavelinServer @Inject constructor(
     }
 
     private inner class JavelinWebSocketServer : WebSocketServer(InetSocketAddress(config.port)) {
-
         private val servers = mutableMapOf<WebSocket, Server>()
+        private val gson = Gson()
 
         @Throws(InvalidDataException::class)
         override fun onWebsocketHandshakeReceivedAsServer(
@@ -60,7 +65,7 @@ class JavelinServer @Inject constructor(
                 val verified = verifier.verify(token)
                 val server = repository.getServer(verified.subject)
 
-                if (server == null || server.token != token) {
+                if (server == null || servers.values.contains(server) || server.token != token) {
                     throw InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid token!!")
                 } else {
                     servers[connection] = server
@@ -91,7 +96,17 @@ class JavelinServer @Inject constructor(
 
         override fun onMessage(connection: WebSocket, message: String) {
             Log.debug("JAVELIN-SERVER: received message from ${servers[connection]!!.name}: $message")
-            connections.forEach { if (it != connection) it.send(message) }
+            val parsed = gson.fromJson<JavelinMessage>(message)
+            if (parsed.target == MessageTarget.SERVER) {
+                try {
+                    val clazz = Class.forName(parsed.clazz)
+                    Events.fire(gson.fromJson(parsed.content, clazz))
+                } catch (e: ClassNotFoundException) {
+                    Log.debug("JAVELIN-SERVER: Failed to find the class ${parsed.clazz}.")
+                }
+            } else {
+                connections.forEach { if (it != connection && servers[connection]!!.scope >= parsed.scope) it.send(message) }
+            }
         }
 
         override fun onError(connection: WebSocket?, ex: Exception) {

@@ -52,25 +52,6 @@ dependencies {
     implementation("com.auth0:java-jwt:3.19.1")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
 
-    // val ktor = "1.6.8"
-    // implementation("io.ktor:ktor-server-core:$ktor")
-    // implementation("io.ktor:ktor-server-netty:$ktor")
-    // implementation("io.ktor:ktor-serialization:$ktor")
-    // // implementation("io.ktor:ktor-client-content-negotiation:$ktor")
-    // implementation("io.ktor:ktor-gson:$ktor")
-    // implementation("io.ktor:ktor-auth:$ktor")
-    // implementation("io.ktor:ktor-auth-jwt:$ktor")
-    // implementation("io.ktor:ktor-websockets:$ktor")
-    // implementation("ch.qos.logback:logback-classic:1.2.11")
-
-    // implementation("io.ktor:ktor-client-core:$ktor")
-    // implementation("io.ktor:ktor-client-cio:$ktor")
-    // implementation("io.ktor:ktor-client-auth:$ktor")
-    // implementation("io.ktor:ktor-client-gson:$ktor")
-    // implementation("org.kodein.di:kodein-di:7.10.0")
-
-    // testImplementation("io.ktor:ktor-server-tests:$ktor")
-
     val junit = "5.8.2"
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")

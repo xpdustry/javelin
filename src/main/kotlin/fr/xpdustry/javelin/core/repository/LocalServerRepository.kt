@@ -1,6 +1,7 @@
 package fr.xpdustry.javelin.core.repository
 
 import com.google.gson.reflect.TypeToken
+import fr.xpdustry.javelin.core.model.Scope
 import fr.xpdustry.javelin.core.model.Server
 import net.mindustry_ddns.store.JsonFileStore
 
@@ -15,9 +16,9 @@ class LocalServerRepository(path: String) : ServerRepository {
         ::mutableListOf
     )
 
-    override fun addServer(name: String, token: String): Server? {
+    override fun addServer(name: String, token: String, scope: Scope): Server? {
         if (!hasServer(name)) {
-            val server = Server(name, token)
+            val server = Server(name, token, scope)
             store.get().add(server)
             store.save()
             return server

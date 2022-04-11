@@ -1,65 +1,78 @@
 package fr.xpdustry.javelin.core
 
 import arc.ApplicationListener
+import arc.Events
 import arc.util.Log
+import arc.util.Timer
+import arc.util.Timer.Task
 import com.google.gson.Gson
-import fr.xpdustry.javelin.internal.JavelinConfig
+import fr.xpdustry.javelin.core.model.Scope
+import fr.xpdustry.javelin.internal.ConnectionData
+import fr.xpdustry.javelin.internal.JavelinClientConfig
 import fr.xpdustry.javelin.util.fromJson
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import java.lang.reflect.Type
 import java.net.URI
 import javax.inject.Inject
+import javax.inject.Singleton
 
-class JavelinClient @Inject constructor(private val config: JavelinConfig) : ApplicationListener {
+@Singleton
+class JavelinClient @Inject constructor(private val config: JavelinClientConfig) : ApplicationListener {
+    private val connections = mutableListOf<JavelinClientConnection>()
     private val gson = Gson()
-    private val client = JavelinWebSocketClient()
-    private val handlers = mutableMapOf<String, JavelinEventHandler<out JavelinEvent>>()
 
-    fun <T : JavelinEvent> setHandler(clazz: Class<out T>, handler: JavelinEventHandler<T>) {
-        Log.debug("Adding handler for class ${clazz.name}")
-        handlers[clazz.name] = handler
+    fun broadcastEvent(event: JavelinEvent, target: MessageTarget = MessageTarget.CLIENT, scope: Scope = Scope.PUBLIC) {
+        val message = JavelinMessage(gson.toJson(event), event.javaClass.name, scope, target)
+        val text = gson.toJson(message)
+        connections.forEach { if (it.data.scope >= message.scope) it.send(text) }
     }
 
-    fun broadcastEvent(event: JavelinEvent) {
-        val message = JavelinMessage(gson.toJson(event), event.javaClass.name)
-        Log.debug("JAVELIN-CLIENT: Sending message $message")
-        client.send(gson.toJson(message))
+    private fun handleMessage(message: String) {
+        val parsed = gson.fromJson<JavelinMessage>(message)
+        try {
+            val clazz = Class.forName(parsed.clazz)
+            Events.fire(gson.fromJson(parsed.content, clazz))
+        } catch (e: ClassNotFoundException) {
+            Log.debug("JAVELIN-CLIENT: Failed to find the class ${parsed.clazz}.")
+        }
     }
 
     override fun init() {
-        Log.info("JAVELIN-CLIENT: Connecting to remote server @.", config.host)
-        client.connectBlocking()
+        for (data in config.hosts) {
+            val task = object : Task() {
+                override fun run() {
+                    val connection = JavelinClientConnection(data)
+                    if (connection.connectBlocking()) {
+                        Log.info("JAVELIN-CLIENT: Successfully connected to ${data.host}")
+                        connections += connection
+                        cancel()
+                    } else {
+                        Log.info("JAVELIN-CLIENT: Failed to connect to ${data.host}, next try in 10 seconds.")
+                    }
+                }
+            }
+            Timer.schedule(task, 0F, 10F, 3)
+        }
     }
 
     override fun dispose() {
-        client.closeBlocking()
+        connections.forEach { it.closeBlocking() }
     }
 
-    private inner class JavelinWebSocketClient : WebSocketClient(
-        URI(config.host),
-        mapOf("Authorization" to "Bearer ${config.token}")
-    ) {
-        override fun onOpen(handshakedata: ServerHandshake) {
-            Log.info("JAVELIN-CLIENT: Logged to remote server @.", config.host)
+    private inner class JavelinClientConnection(val data: ConnectionData) : WebSocketClient(URI(data.host), mapOf("Authorization" to "Bearer ${data.token}")) {
+        override fun onOpen(handshakedata: ServerHandshake?) {
         }
 
         override fun onMessage(message: String) {
-            Log.debug("JAVELIN-CLIENT: received message $message")
-            val parsed = gson.fromJson<JavelinMessage>(message)
-            try {
-                val clazz = Class.forName(parsed.clazz)
-                handlers[clazz.name]?.onEvent(gson.fromJson(parsed.content, clazz as Type))
-            } catch (e: ClassNotFoundException) {
-                Log.debug("JAVELIN-CLIENT: Failed to find the class ${parsed.clazz} for incoming message.")
-            }
+            Log.debug("JAVELIN-CLIENT: Received message from @ server. (@)", data.host, message)
+            handleMessage(message)
         }
 
         override fun onClose(code: Int, reason: String, remote: Boolean) {
             if (remote) {
-                Log.info("JAVELIN-CLIENT: The remote server @ has unexpectedly closed the connection: @.", config.host, reason)
+                Log.info("JAVELIN-CLIENT: The server @ unexpectedly closed the connection. (@: @)", data.host, code, reason)
             } else {
-                Log.info("JAVELIN-CLIENT: Failed to connect to @ remote server: @", config.host, reason)
+                Log.info("JAVELIN-CLIENT: The connection to @ has been closed. (@: @)", data.host, code, reason)
             }
         }
 
@@ -67,10 +80,6 @@ class JavelinClient @Inject constructor(private val config: JavelinConfig) : App
             Log.err("JAVELIN-CLIENT: An unexpected exception occurred.", ex)
         }
     }
-}
-
-fun interface JavelinEventHandler<T : JavelinEvent> {
-    fun onEvent(event: T)
 }
 
 interface JavelinEvent
