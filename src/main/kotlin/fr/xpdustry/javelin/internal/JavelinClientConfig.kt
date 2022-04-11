@@ -1,9 +1,20 @@
 package fr.xpdustry.javelin.internal
 
-import fr.xpdustry.javelin.core.model.Scope
+import org.aeonbits.owner.Accessible
+import org.aeonbits.owner.Config
+import java.net.URI
 
-data class JavelinClientConfig(
-    val hosts: MutableList<ConnectionData> = arrayListOf()
-)
+interface JavelinClientConfig : Accessible {
 
-data class ConnectionData(val host: String, val token: String, val scope: Scope)
+    @get:Config.DefaultValue("false")
+    @get:Config.Key("javelin.client.enabled")
+    val enabled: Boolean
+
+    @get:Config.DefaultValue("ws://localhost:8080")
+    @get:Config.Key("javelin.client.host")
+    val host: URI
+
+    @get:Config.DefaultValue("insert-token-here")
+    @get:Config.Key("javelin.client.token")
+    val token: String
+}

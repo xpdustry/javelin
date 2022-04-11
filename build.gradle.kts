@@ -56,8 +56,7 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
-
-    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.10")
+    testImplementation(kotlin("test-junit"))
 
     val jetbrains = "23.0.0"
     compileOnly("org.jetbrains:annotations:$jetbrains")
@@ -106,7 +105,7 @@ indra {
     publishReleasesTo("xpdustry", "https://repo.xpdustry.fr/releases")
     publishSnapshotsTo("xpdustry", "https://repo.xpdustry.fr/snapshots")
 
-    mitLicense()
+    gpl3OnlyLicense()
 
     if (metadata.repo != null) {
         val repo = metadata.repo!!.split("/")

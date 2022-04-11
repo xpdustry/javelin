@@ -1,4 +1,4 @@
-package fr.xpdustry.javelin.chat
+package fr.xpdustry.javelin.whisper
 
 import arc.Events
 import arc.util.Strings
@@ -6,6 +6,7 @@ import cloud.commandframework.annotations.Argument
 import cloud.commandframework.annotations.CommandDescription
 import cloud.commandframework.annotations.CommandMethod
 import cloud.commandframework.annotations.specifier.Greedy
+import cloud.commandframework.services.State
 import fr.xpdustry.distributor.command.sender.ArcCommandSender
 import fr.xpdustry.distributor.message.MessageIntent
 import fr.xpdustry.javelin.util.clientMessageFormatter
@@ -15,6 +16,7 @@ import fr.xpdustry.javelin.util.typeToken
 import mindustry.game.EventType.PlayerLeave
 import mindustry.gen.Player
 
+@Suppress("UNUSED")
 class WhisperCommand {
     private val replies = mutableMapOf<Player, String>()
 
@@ -52,8 +54,12 @@ class WhisperCommand {
 
     private fun ArcCommandSender.whisper(receiver: String, message: String) {
         val context = WhisperContext(player.name(), receiver, message)
-        servicePipeline.pump(context).through(typeToken<WhisperService>()).result
         replies[player] = receiver
-        player.sendMessage(context.formatted())
+        val result = servicePipeline.pump(context).through(typeToken<WhisperService>()).result
+        if (result == State.ACCEPTED) {
+            player.sendMessage(WhisperFormatter.instance.format(context))
+        } else {
+            sendMessage(clientMessageFormatter.format("The player $receiver can't be found on.", MessageIntent.ERROR))
+        }
     }
 }
