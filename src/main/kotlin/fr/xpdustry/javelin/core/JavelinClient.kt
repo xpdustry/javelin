@@ -38,6 +38,7 @@ class JavelinClient @Inject constructor(private val config: JavelinClientConfig)
     }
 
     override fun init() {
+        dispose()
         for (data in config.hosts) {
             val task = object : Task() {
                 override fun run() {
@@ -57,14 +58,16 @@ class JavelinClient @Inject constructor(private val config: JavelinClientConfig)
 
     override fun dispose() {
         connections.forEach { it.closeBlocking() }
+        connections.clear()
     }
 
-    private inner class JavelinClientConnection(val data: ConnectionData) : WebSocketClient(URI(data.host), mapOf("Authorization" to "Bearer ${data.token}")) {
+    private inner class JavelinClientConnection(val data: ConnectionData) : WebSocketClient(
+        URI(data.host), mapOf("Authorization" to "Bearer ${data.token}")
+    ) {
         override fun onOpen(handshakedata: ServerHandshake?) {
         }
 
         override fun onMessage(message: String) {
-            Log.debug("JAVELIN-CLIENT: Received message from @ server. (@)", data.host, message)
             handleMessage(message)
         }
 

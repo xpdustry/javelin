@@ -18,6 +18,7 @@ import org.java_websocket.handshake.ClientHandshake
 import org.java_websocket.handshake.ServerHandshakeBuilder
 import org.java_websocket.server.WebSocketServer
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -26,12 +27,13 @@ class JavelinServer @Inject constructor(
     private val config: JavelinServerConfig,
     private val verifier: JWTVerifier,
     private val repository: ServerRepository
-): ApplicationListener {
+) : ApplicationListener {
     private companion object {
         const val AUTHORIZATION_HEADER = "Authorization"
         val AUTHORIZATION_REGEX = Regex("^Bearer .+$")
     }
 
+    private val gson = Gson()
     private val server = JavelinWebSocketServer()
 
     override fun init() {
@@ -39,12 +41,11 @@ class JavelinServer @Inject constructor(
     }
 
     override fun dispose() {
-        server.stop(1000)
+        server.stop(5000)
     }
 
     private inner class JavelinWebSocketServer : WebSocketServer(InetSocketAddress(config.port)) {
         private val servers = mutableMapOf<WebSocket, Server>()
-        private val gson = Gson()
 
         @Throws(InvalidDataException::class)
         override fun onWebsocketHandshakeReceivedAsServer(
@@ -53,12 +54,12 @@ class JavelinServer @Inject constructor(
             handshake: ClientHandshake
         ): ServerHandshakeBuilder {
             val builder = super.onWebsocketHandshakeReceivedAsServer(connection, draft, handshake)
+            val authorization = handshake.getFieldValue(AUTHORIZATION_HEADER)
 
-            if (handshake.resourceDescriptor != "/" || !handshake.getFieldValue(AUTHORIZATION_HEADER).matches(AUTHORIZATION_REGEX)) {
+            if (handshake.resourceDescriptor != "/" || !authorization.matches(AUTHORIZATION_REGEX)) {
                 throw InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid!")
             }
 
-            val authorization = handshake.getFieldValue(AUTHORIZATION_HEADER)
             val token = authorization.split(' ', limit = 2)[1]
 
             try {
@@ -95,7 +96,6 @@ class JavelinServer @Inject constructor(
         }
 
         override fun onMessage(connection: WebSocket, message: String) {
-            Log.debug("JAVELIN-SERVER: received message from ${servers[connection]!!.name}: $message")
             val parsed = gson.fromJson<JavelinMessage>(message)
             if (parsed.target == MessageTarget.SERVER) {
                 try {
@@ -105,8 +105,14 @@ class JavelinServer @Inject constructor(
                     Log.debug("JAVELIN-SERVER: Failed to find the class ${parsed.clazz}.")
                 }
             } else {
-                connections.forEach { if (it != connection && servers[connection]!!.scope >= parsed.scope) it.send(message) }
+                connections.forEach {
+                    if (it != connection && servers[connection]!!.scope >= parsed.scope) it.send(message)
+                }
             }
+        }
+
+        override fun onMessage(connection: WebSocket, message: ByteBuffer) {
+            connection.close(CloseFrame.REFUSE)
         }
 
         override fun onError(connection: WebSocket?, ex: Exception) {

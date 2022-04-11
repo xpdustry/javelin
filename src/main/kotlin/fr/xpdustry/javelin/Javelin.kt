@@ -1,8 +1,6 @@
 package fr.xpdustry.javelin
 
 import arc.Core
-import arc.util.CommandHandler
-import arc.util.Log
 import cloud.commandframework.annotations.AnnotationParser
 import cloud.commandframework.arguments.standard.EnumArgument
 import cloud.commandframework.arguments.standard.StringArgument
@@ -12,7 +10,6 @@ import com.auth0.jwt.interfaces.JWTVerifier
 import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.Injector
-import com.google.inject.TypeLiteral
 import fr.xpdustry.distributor.command.ArcCommandManager
 import fr.xpdustry.distributor.command.ArcMeta
 import fr.xpdustry.distributor.command.sender.ArcCommandSender
@@ -27,9 +24,7 @@ import fr.xpdustry.javelin.internal.JavelinServerConfig
 import fr.xpdustry.javelin.core.repository.ServerRepository
 import fr.xpdustry.javelin.internal.JavelinClientConfig
 import fr.xpdustry.javelin.util.servicePipeline
-import fr.xpdustry.javelin.util.typeLiteral
 import fr.xpdustry.javelin.util.typeToken
-import mindustry.gen.Groups
 import net.mindustry_ddns.store.FileStore
 import java.util.*
 import javax.inject.Provider
@@ -60,6 +55,7 @@ class Javelin : AbstractPlugin() {
     override fun init() {
         serverStore = getStoredConfig("server-config", JavelinServerConfig::class.java)
         clientStore = getStoredObject("client-config", JavelinClientConfig::class.java, ::JavelinClientConfig)
+
         algorithm = Algorithm.HMAC256(serverStore.get().secret)
         injector = Guice.createInjector(JavelinModule())
 
@@ -71,7 +67,11 @@ class Javelin : AbstractPlugin() {
 
         if (clientStore.get().hosts.isNotEmpty()) {
             Core.app.addListener(client)
-            servicePipeline.registerServiceImplementation(typeToken<WhisperService>(), injector.getInstance(JavelinWhisperService::class.java), listOf())
+            servicePipeline.registerServiceImplementation(
+                typeToken<WhisperService>(),
+                injector.getInstance(JavelinWhisperService::class.java),
+                listOf()
+            )
         }
     }
 
@@ -102,7 +102,7 @@ class Javelin : AbstractPlugin() {
             bind(JavelinServerConfig::class.java).toProvider(Provider { serverStore.get() })
             bind(JWTVerifier::class.java).toInstance(JWT.require(algorithm).build())
             bind(ServerRepository::class.java).toInstance(ServerRepository.local(directory.child("servers.json")))
-            bind(JavelinClientConfig::class.java).toProvider(Provider{ clientStore.get() })
+            bind(JavelinClientConfig::class.java).toProvider(Provider { clientStore.get() })
         }
     }
 }

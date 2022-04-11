@@ -6,7 +6,6 @@ import cloud.commandframework.annotations.Argument
 import cloud.commandframework.annotations.CommandDescription
 import cloud.commandframework.annotations.CommandMethod
 import cloud.commandframework.annotations.specifier.Greedy
-import cloud.commandframework.services.State
 import fr.xpdustry.distributor.command.sender.ArcCommandSender
 import fr.xpdustry.distributor.message.MessageIntent
 import fr.xpdustry.javelin.util.clientMessageFormatter
@@ -25,7 +24,11 @@ class WhisperCommand {
 
     @CommandMethod("whisper|w <receiver> <message>")
     @CommandDescription("Whisper a message to another player.")
-    fun sendMessage(sender: ArcCommandSender, @Argument("receiver") receiver: String, @Argument("message") @Greedy message: String) {
+    fun sendMessage(
+        sender: ArcCommandSender,
+        @Argument("receiver") receiver: String,
+        @Argument("message") @Greedy message: String
+    ) {
         if (Strings.stripColors(sender.player.name()) == Strings.stripColors(receiver)) {
             sender.sendMessage(clientMessageFormatter.format("You can't message yourself.", MessageIntent.ERROR))
         } else {
@@ -35,7 +38,10 @@ class WhisperCommand {
 
     @CommandMethod("reply|r <message>")
     @CommandDescription("Whisper a message to another player.")
-    fun sendMessage(sender: ArcCommandSender, @Argument("message") @Greedy message: String) {
+    fun sendMessage(
+        sender: ArcCommandSender,
+        @Argument("message") @Greedy message: String
+    ) {
         val receiver = replies[sender.player]
         if (receiver == null) {
             sender.sendMessage(clientMessageFormatter.format("Error, no recent messages.", MessageIntent.ERROR))
@@ -45,16 +51,9 @@ class WhisperCommand {
     }
 
     private fun ArcCommandSender.whisper(receiver: String, message: String) {
-        servicePipeline
-            .pump(WhisperContext(player.name(), receiver, message))
-            .through(typeToken<WhisperService>())
-            .getResult { state, _ ->
-                if (state == State.ACCEPTED) {
-                    replies[player] = receiver
-                } else {
-                    sendMessage(clientMessageFormatter.format("The target is not reachable to send the message", MessageIntent.ERROR))
-                    replies.remove(player)
-                }
-            }
+        val context = WhisperContext(player.name(), receiver, message)
+        servicePipeline.pump(context).through(typeToken<WhisperService>()).result
+        replies[player] = receiver
+        player.sendMessage(context.formatted())
     }
 }
