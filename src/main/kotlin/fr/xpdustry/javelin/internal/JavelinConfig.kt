@@ -5,19 +5,27 @@ import org.aeonbits.owner.Config.DefaultValue
 import org.aeonbits.owner.Config.Key
 
 interface JavelinConfig : Accessible {
-
-    @get:Key("javelin.secret")
-    val secretKey: String
-
-    @get:DefaultValue("unknown")
-    @get:Key("javelin.issuer-name")
-    val issuer: String
+    @get:DefaultValue("false")
+    @get:Key("javelin.server.enabled")
+    val server: Boolean
 
     @get:DefaultValue("8080")
     @get:Key("javelin.server.port")
     val port: Int
 
+    @get:DefaultValue("your-246bits-secret")
+    @get:Key("javelin.server.secret")
+    val secret: String
+
     @get:DefaultValue("false")
-    @get:Key("javelin.server.enabled")
-    val server: Boolean
+    @get:Key("javelin.client.enabled")
+    val client: Boolean
+
+    @get:DefaultValue("ws://localhost:8080")
+    @get:Key("javelin.client.host")
+    val host: String
+
+    @get:DefaultValue("your-token-issued-by-the-main-server")
+    @get:Key("javelin.client.token")
+    val token: String
 }

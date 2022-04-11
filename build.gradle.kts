@@ -31,36 +31,52 @@ toxopid {
 
 repositories {
     mavenCentral()
-    maven("https://jitpack.io")
     maven("https://repo.xpdustry.fr/releases") {
         name = "xpdustry-releases-repository"
-        mavenContent { releasesOnly() }
+        mavenContent {
+            includeGroupByRegex("fr\\.xpdustry|net\\.mindustry_ddns")
+            releasesOnly()
+        }
     }
 }
 
 dependencies {
     compileOnly(kotlin("stdlib"))
-    compileOnly("fr.xpdustry:distributor-core:2.6.1")
 
-    implementation("io.javalin:javalin:4.4.0")
-    // implementation("org.java-websocket:Java-WebSocket:1.5.2")
+    val distributor = "2.6.1"
+    compileOnly("fr.xpdustry:distributor-core:$distributor")
+    testImplementation("fr.xpdustry:distributor-core:$distributor")
 
-    implementation("org.slf4j:slf4j-api:1.8.0-beta4")
-    implementation("org.slf4j:slf4j-simple:1.7.36")
+    implementation("org.java-websocket:Java-WebSocket:1.5.2")
+    implementation("com.google.inject:guice:5.1.0")
+    implementation("com.auth0:java-jwt:3.19.1")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2.2")
 
-    // val jwt = "0.11.2"
-    // implementation("io.jsonwebtoken:jjwt-api:$jwt")
-    // runtimeOnly("io.jsonwebtoken:jjwt-impl:$jwt")
-    // runtimeOnly("io.jsonwebtoken:jjwt-gson:$jwt") {
-    //     exclude("com.google.code.gson", "gson")
-    // }
-    implementation("com.auth0:java-jwt:3.19.0")
-    implementation("com.github.kmehrunes:javalin-jwt:0.6")
+    // val ktor = "1.6.8"
+    // implementation("io.ktor:ktor-server-core:$ktor")
+    // implementation("io.ktor:ktor-server-netty:$ktor")
+    // implementation("io.ktor:ktor-serialization:$ktor")
+    // // implementation("io.ktor:ktor-client-content-negotiation:$ktor")
+    // implementation("io.ktor:ktor-gson:$ktor")
+    // implementation("io.ktor:ktor-auth:$ktor")
+    // implementation("io.ktor:ktor-auth-jwt:$ktor")
+    // implementation("io.ktor:ktor-websockets:$ktor")
+    // implementation("ch.qos.logback:logback-classic:1.2.11")
+
+    // implementation("io.ktor:ktor-client-core:$ktor")
+    // implementation("io.ktor:ktor-client-cio:$ktor")
+    // implementation("io.ktor:ktor-client-auth:$ktor")
+    // implementation("io.ktor:ktor-client-gson:$ktor")
+    // implementation("org.kodein.di:kodein-di:7.10.0")
+
+    // testImplementation("io.ktor:ktor-server-tests:$ktor")
 
     val junit = "5.8.2"
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
+
+    testImplementation("org.jetbrains.kotlin:kotlin-test-junit:1.6.10")
 
     val jetbrains = "23.0.0"
     compileOnly("org.jetbrains:annotations:$jetbrains")
