@@ -7,7 +7,11 @@ import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonToken
 import com.google.gson.stream.JsonWriter
 
-data class Server(val name: String, var token: String, val endpoints: MutableSet<Endpoint>)
+data class Client @JvmOverloads constructor(
+    val name: String,
+    var token: String,
+    val endpoints: MutableSet<Endpoint> = mutableSetOf()
+)
 
 data class Endpoint(val namespace: String, val subject: String) {
     override fun toString(): String = "$namespace:$subject"

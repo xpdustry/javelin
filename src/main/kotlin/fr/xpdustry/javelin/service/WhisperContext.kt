@@ -1,4 +1,4 @@
-package fr.xpdustry.javelin.whisper
+package fr.xpdustry.javelin.service
 
 data class WhisperContext(
     val sender: String,

@@ -8,9 +8,9 @@ import com.auth0.jwt.exceptions.JWTVerificationException
 import com.google.gson.GsonBuilder
 import com.google.inject.ImplementedBy
 import fr.xpdustry.javelin.internal.JavelinServerConfig
-import fr.xpdustry.javelin.model.Server
+import fr.xpdustry.javelin.model.Client
 import fr.xpdustry.javelin.model.registerEndpointTypeAdapter
-import fr.xpdustry.javelin.repository.ServerRepository
+import fr.xpdustry.javelin.repository.ClientRepository
 import fr.xpdustry.javelin.util.fromJson
 import fr.xpdustry.javelin.util.getDraft
 import org.java_websocket.WebSocket
@@ -26,16 +26,15 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinServer::class)
-sealed interface JavelinServer : ApplicationListener {
-    fun isConnected(server: Server): Boolean
+interface JavelinServer : ApplicationListener {
+    fun isConnected(client: Client): Boolean
 }
 
 @Singleton
 private class SimpleJavelinServer @Inject constructor(
     private val config: JavelinServerConfig,
-    private val repository: ServerRepository,
-    algorithm: Algorithm
-) : WebSocketServer(InetSocketAddress(config.port), config.workers, listOf(getDraft(config.https))), JavelinServer {
+    private val repository: ClientRepository
+) : JavelinServer, WebSocketServer(InetSocketAddress(config.port), config.workers, listOf(getDraft(config.wss))) {
     private companion object {
         const val AUTHORIZATION_HEADER = "Authorization"
         val AUTHORIZATION_REGEX = Regex("^Bearer .+$")
@@ -45,7 +44,7 @@ private class SimpleJavelinServer @Inject constructor(
         isReuseAddr = true
     }
 
-    private val verifier = JWT.require(algorithm).build()
+    private val verifier = JWT.require(Algorithm.HMAC256(config.secret)).build()
 
     private val gson = GsonBuilder()
         .setPrettyPrinting()
@@ -110,26 +109,26 @@ private class SimpleJavelinServer @Inject constructor(
     }
 
     override fun onOpen(con: WebSocket, handshake: ClientHandshake) {
-        Log.info("JAVELIN-SERVER: @ server has connected.", con.server.name)
+        Log.info("JAVELIN-SERVER: @ server has connected.", con.client.name)
     }
 
     override fun onClose(con: WebSocket, code: Int, reason: String, remote: Boolean) {
         if (!remote) {
-            Log.info("JAVELIN-SERVER: @ server has unexpectedly disconnected: @", con.server.name, reason)
+            Log.info("JAVELIN-SERVER: @ server has unexpectedly disconnected: @", con.client.name, reason)
         } else {
-            Log.info("JAVELIN-SERVER: @ server has disconnected: @", con.server.name, reason)
+            Log.info("JAVELIN-SERVER: @ server has disconnected: @", con.client.name, reason)
         }
     }
 
     override fun onMessage(con: WebSocket, incoming: String) {
         val message = gson.fromJson<JavelinMessage>(incoming)
-        Log.debug("JAVELIN-SERVER: Incoming message from ${con.server.name} > $incoming.")
+        Log.debug("JAVELIN-SERVER: Incoming message from ${con.client.name} > $incoming.")
 
         if (message.receiver == null) {
-            broadcast(incoming, connections.minus(con).filter { message.endpoint in it.server.endpoints })
+            broadcast(incoming, connections.minus(con).filter { message.endpoint in it.client.endpoints })
         } else {
             connections
-                .find { it.server.name == message.receiver && message.endpoint in it.server.endpoints }
+                .find { it.client.name == message.receiver && message.endpoint in it.client.endpoints }
                 ?.send(incoming)
         }
     }
@@ -142,13 +141,13 @@ private class SimpleJavelinServer @Inject constructor(
         if (con == null) {
             Log.err("JAVELIN-SERVER: An exception has occurred in the javelin server.", ex)
         } else {
-            Log.err("JAVELIN-SERVER: An exception has occurred in the ${con.server.name} remote client.", ex)
+            Log.err("JAVELIN-SERVER: An exception has occurred in the ${con.client.name} remote client.", ex)
         }
     }
 
-    override fun isConnected(server: Server): Boolean =
-        connections.find { it.server == server } != null
+    override fun isConnected(client: Client): Boolean =
+        connections.find { it.client == client } != null
 
-    private val WebSocket.server: Server
+    private val WebSocket.client: Client
         get() = getAttachment()
 }

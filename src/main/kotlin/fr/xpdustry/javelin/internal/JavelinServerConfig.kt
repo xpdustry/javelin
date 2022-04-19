@@ -21,8 +21,8 @@ interface JavelinServerConfig : Accessible {
     val workers: Int
 
     @get:Config.DefaultValue("false")
-    @get:Config.Key("javelin.server.https")
-    val https: Boolean
+    @get:Config.Key("javelin.server.wss")
+    val wss: Boolean
 
     @get:Config.DefaultValue("/")
     @get:Config.Key("javelin.server.path")

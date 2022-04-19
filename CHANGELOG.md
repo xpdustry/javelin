@@ -1,3 +1,3 @@
-- Fix ugly error message when the message receiver is offline.
+- Cleanup + optimizations
 
-- Fix startup error when restarting a Javelin server.
+- Renamed `Server` to `Client`, and the former `ServerRepository` file `servers.json` to `clients.json`, just rename it...

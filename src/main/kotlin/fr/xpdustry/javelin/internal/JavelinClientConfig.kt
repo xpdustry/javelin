@@ -18,8 +18,8 @@ interface JavelinClientConfig : Accessible {
     val token: String
 
     @get:Config.DefaultValue("false")
-    @get:Config.Key("javelin.client.https")
-    val https: Boolean
+    @get:Config.Key("javelin.client.wss")
+    val wss: Boolean
 
     @get:Config.DefaultValue("60")
     @get:Config.Key("javelin.client.timeout")

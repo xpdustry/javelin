@@ -1,8 +1,10 @@
 package fr.xpdustry.javelin
 
 import arc.Core
+import arc.util.Strings
 import cloud.commandframework.annotations.AnnotationParser
-import com.auth0.jwt.algorithms.Algorithm
+import cloud.commandframework.arguments.standard.StringArgument
+import cloud.commandframework.services.State
 import com.google.inject.AbstractModule
 import com.google.inject.Guice
 import com.google.inject.Injector
@@ -10,16 +12,20 @@ import com.google.inject.Provides
 import fr.xpdustry.distributor.command.ArcCommandManager
 import fr.xpdustry.distributor.command.ArcMeta
 import fr.xpdustry.distributor.command.sender.ArcCommandSender
+import fr.xpdustry.distributor.message.MessageIntent
 import fr.xpdustry.distributor.plugin.AbstractPlugin
+import fr.xpdustry.javelin.command.ServerCommand
 import fr.xpdustry.javelin.internal.JavelinClientConfig
 import fr.xpdustry.javelin.internal.JavelinServerConfig
-import fr.xpdustry.javelin.internal.ServerRepositoryCommand
-import fr.xpdustry.javelin.repository.ServerRepository
+import fr.xpdustry.javelin.repository.ClientRepository
+import fr.xpdustry.javelin.service.JavelinWhisperService
+import fr.xpdustry.javelin.service.WhisperContext
+import fr.xpdustry.javelin.service.WhisperFormatter
+import fr.xpdustry.javelin.service.WhisperService
+import fr.xpdustry.javelin.util.format
+import fr.xpdustry.javelin.util.formatter
 import fr.xpdustry.javelin.util.servicePipeline
 import fr.xpdustry.javelin.util.typeToken
-import fr.xpdustry.javelin.whisper.JavelinWhisperService
-import fr.xpdustry.javelin.whisper.WhisperCommand
-import fr.xpdustry.javelin.whisper.WhisperService
 import net.mindustry_ddns.store.FileStore
 import java.nio.charset.StandardCharsets
 import java.util.*
@@ -29,12 +35,12 @@ import javax.crypto.KeyGenerator
 class Javelin : AbstractPlugin() {
     companion object {
         @JvmStatic
-        val client: JavelinClient?
-            get() = Core.app.listeners.find { it is JavelinClient } as JavelinClient?
+        var client: JavelinClient? = null
+            private set
 
         @JvmStatic
-        val server: JavelinServer?
-            get() = Core.app.listeners.find { it is JavelinServer } as JavelinServer?
+        var server: JavelinServer? = null
+            private set
     }
 
     private lateinit var clientStore: FileStore<JavelinClientConfig>
@@ -49,11 +55,13 @@ class Javelin : AbstractPlugin() {
         servicePipeline.registerServiceType(typeToken<WhisperService>(), WhisperService.local())
 
         if (serverStore.get().enabled) {
-            Core.app.addListener(injector.getInstance(JavelinServer::class.java))
+            server = injector.getInstance(JavelinServer::class.java)
+            Core.app.addListener(server)
         }
 
         if (clientStore.get().enabled) {
-            Core.app.addListener(injector.getInstance(JavelinClient::class.java))
+            client = injector.getInstance(JavelinClient::class.java)
+            Core.app.addListener(client)
             servicePipeline.registerServiceImplementation(
                 typeToken<WhisperService>(),
                 injector.getInstance(JavelinWhisperService::class.java),
@@ -63,13 +71,40 @@ class Javelin : AbstractPlugin() {
     }
 
     override fun registerClientCommands(manager: ArcCommandManager) {
-        val annotations = AnnotationParser(manager, ArcCommandSender::class.java) { manager.createDefaultCommandMeta() }
-        annotations.parse(WhisperCommand())
+        manager.command(manager.commandBuilder("whisper", "w")
+            .meta(ArcMeta.DESCRIPTION, "Whisper to somebody, I dunno...")
+            .argument(StringArgument.quoted("receiver"))
+            .argument(StringArgument.greedy("message"))
+            .handler {
+                if (Strings.stripColors(it.sender.player.name()) == Strings.stripColors(it["receiver"])) {
+                    it.sender.sendMessage(it.sender.formatter.format(
+                        "You can't message yourself.", MessageIntent.ERROR)
+                    )
+                } else {
+                    val context = WhisperContext(it.sender.player.name(), it["receiver"], it["message"])
+                    val result = try {
+                        servicePipeline.pump(context).through(typeToken<WhisperService>()).result
+                    } catch (e: Exception) {
+                        State.REJECTED
+                    }
+
+                    if (result == State.ACCEPTED) {
+                        it.sender.player.sendMessage(WhisperFormatter.instance.format(context))
+                    } else {
+                        it.sender.sendMessage(
+                            it.sender.formatter.format(
+                                "The player ${context.receiver} is not online.", MessageIntent.ERROR
+                            )
+                        )
+                    }
+                }
+            }
+        )
     }
 
     override fun registerServerCommands(manager: ArcCommandManager) {
         val annotations = AnnotationParser(manager, ArcCommandSender::class.java) { manager.createDefaultCommandMeta() }
-        if (serverStore.get().enabled) annotations.parse(injector.getInstance(ServerRepositoryCommand::class.java))
+        annotations.parse(injector.getInstance(ServerCommand::class.java))
 
         manager.command(manager.commandBuilder("javelin").literal("server").literal("generate-secret")
             .meta(ArcMeta.DESCRIPTION, "Generates a secret key for your server, be aware that changing it revokes all you server tokens.")
@@ -84,18 +119,15 @@ class Javelin : AbstractPlugin() {
 
     private inner class JavelinModule : AbstractModule() {
         @get:Provides
-        val clientConfig: JavelinServerConfig
-            get() = serverStore.get()
-
-        @get:Provides
-        val serverConfig: JavelinClientConfig
+        val clientConfig: JavelinClientConfig
             get() = clientStore.get()
 
+        @get:Provides
+        val serverConfig: JavelinServerConfig
+            get() = serverStore.get()
+
         override fun configure() {
-            if (serverStore.get().enabled) {
-                bind(Algorithm::class.java).toInstance(Algorithm.HMAC256(serverStore.get().secret))
-                bind(ServerRepository::class.java).toInstance(ServerRepository.local(directory.child("servers.json")))
-            }
+            bind(ClientRepository::class.java).toInstance(ClientRepository.local(directory.child("clients.json")))
         }
     }
 }

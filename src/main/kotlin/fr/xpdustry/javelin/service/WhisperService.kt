@@ -1,4 +1,4 @@
-package fr.xpdustry.javelin.whisper
+package fr.xpdustry.javelin.service
 
 import arc.util.Strings
 import cloud.commandframework.services.ExecutionOrder
@@ -17,7 +17,6 @@ interface WhisperService : SideEffectService<WhisperContext> {
             val player = Groups.player.find {
                 Strings.stripColors(it.name()) == Strings.stripColors(context.receiver)
             }
-
             return if (player != null) {
                 player.sendMessage(WhisperFormatter.instance.format(context))
                 State.ACCEPTED

@@ -1,4 +1,4 @@
-package fr.xpdustry.javelin.whisper
+package fr.xpdustry.javelin.service
 
 fun interface WhisperFormatter {
     fun format(sender: String, message: String): String

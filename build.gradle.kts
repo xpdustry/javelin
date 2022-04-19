@@ -50,6 +50,7 @@ dependencies {
     implementation("org.java-websocket:Java-WebSocket:1.5.2")
     implementation("com.google.inject:guice:5.1.0")
     implementation("com.auth0:java-jwt:3.19.1")
+    implementation("org.slf4j:slf4j-simple:1.7.36")
 
     val junit = "5.8.2"
     testImplementation("org.junit.jupiter:junit-jupiter-params:$junit")

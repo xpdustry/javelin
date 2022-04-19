@@ -1,7 +1,8 @@
-package fr.xpdustry.javelin.whisper
+package fr.xpdustry.javelin.service
 
 import arc.Core
 import arc.util.Strings
+import cloud.commandframework.services.ExecutionOrder
 import cloud.commandframework.services.State
 import fr.xpdustry.javelin.JavelinClient
 import fr.xpdustry.javelin.JavelinMessage
@@ -35,11 +36,7 @@ class JavelinWhisperService @Inject constructor(private val client: JavelinClien
         client.broadcast(ENDPOINT, request)
         val received = runCatching { future.get(2L, TimeUnit.SECONDS) }
         futures -= request.id
-        return if (received.getOrDefault(false)) {
-            State.ACCEPTED
-        } else {
-            State.REJECTED
-        }
+        return if (received.getOrDefault(false)) State.ACCEPTED else State.REJECTED
     }
 
     override fun onMessageReceive(message: JavelinMessage, content: Any) {
@@ -57,6 +54,8 @@ class JavelinWhisperService @Inject constructor(private val client: JavelinClien
             }
         }
     }
+
+    override fun order(): ExecutionOrder = ExecutionOrder.LAST
 
     private data class JavelinWhisperRequest(val context: WhisperContext, val id: Int)
 

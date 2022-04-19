@@ -14,13 +14,12 @@ import fr.xpdustry.javelin.util.fromJson
 import fr.xpdustry.javelin.util.getDraft
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
-import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinClient::class)
-sealed interface JavelinClient : ApplicationListener {
+interface JavelinClient : ApplicationListener {
     fun send(endpoint: Endpoint, message: Any, receiver: String)
 
     fun broadcast(endpoint: Endpoint, message: Any)
@@ -31,7 +30,9 @@ sealed interface JavelinClient : ApplicationListener {
 }
 
 @Singleton
-private class SimpleJavelinClient @Inject constructor(private val config: JavelinClientConfig) : JavelinClient, WebSocketClient(config.host, getDraft(config.https)) {
+private class SimpleJavelinClient @Inject constructor(
+    private val config: JavelinClientConfig
+) : JavelinClient, WebSocketClient(config.host, getDraft(config.wss)) {
     private val handlers = mutableMapOf<Endpoint, MessageHandler>()
     private val jwt: DecodedJWT
     private val gson = GsonBuilder()
@@ -64,11 +65,9 @@ private class SimpleJavelinClient @Inject constructor(private val config: Javeli
         sendMessage(endpoint, message)
     }
 
-    private fun sendMessage(endpoint: Endpoint, message: Any, receiver: String? = null): String {
-        val id = UUID.randomUUID().toString()
+    private fun sendMessage(endpoint: Endpoint, message: Any, receiver: String? = null) {
         Log.debug("JAVELIN-CLIENT: Sending ${if (receiver == null) "broadcast" else ""} message to endpoint $endpoint $message.")
         send(gson.toJson(JavelinMessage(endpoint, gson.toJson(message), message.javaClass.name, jwt.subject, receiver)))
-        return id
     }
 
     override fun registerMessageHandler(handler: MessageHandler) {
