@@ -1,3 +1,3 @@
-- Some bug fixes + optimizations.
-- Added better debug.
-- Added new configuration properties.
+- Fix ugly error message when the message receiver is offline.
+
+- Fix startup error when restarting a Javelin server.

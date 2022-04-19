@@ -41,6 +41,10 @@ private class SimpleJavelinServer @Inject constructor(
         val AUTHORIZATION_REGEX = Regex("^Bearer .+$")
     }
 
+    init {
+        isReuseAddr = true
+    }
+
     private val verifier = JWT.require(algorithm).build()
 
     private val gson = GsonBuilder()

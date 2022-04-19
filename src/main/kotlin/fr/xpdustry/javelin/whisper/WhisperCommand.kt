@@ -55,11 +55,16 @@ class WhisperCommand {
     private fun ArcCommandSender.whisper(receiver: String, message: String) {
         val context = WhisperContext(player.name(), receiver, message)
         replies[player] = receiver
-        val result = servicePipeline.pump(context).through(typeToken<WhisperService>()).result
-        if (result == State.ACCEPTED) {
-            player.sendMessage(WhisperFormatter.instance.format(context))
-        } else {
-            sendMessage(clientMessageFormatter.format("The player $receiver can't be found on.", MessageIntent.ERROR))
-        }
+
+        servicePipeline
+            .pump(context)
+            .through(typeToken<WhisperService>())
+            .getResult { result, _ ->
+                if (result == State.ACCEPTED) {
+                    player.sendMessage(WhisperFormatter.instance.format(context))
+                } else {
+                    sendMessage(clientMessageFormatter.format("The player $receiver is not online.", MessageIntent.ERROR))
+                }
+            }
     }
 }

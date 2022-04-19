@@ -3,7 +3,7 @@
   "displayName": "Xpdustry Javelin",
   "author": "Xpdustry",
   "description": "A plugin for cross server communication.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "minGameVersion": "v126.2",
   "hidden": true,
   "java": true,
