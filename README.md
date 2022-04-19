@@ -42,6 +42,10 @@ So if you want, for example to enable the built-in global whisper command of Jav
 
 Its terribly simple, just get the client with `Javelin.getClient()`, check if it's not null, and enjoy.
 
+### Tips
+
+- In the client config, if you set `javelin.client.timeout` to `0`, Your client will always reconnect to your main server, even if it has been down for a long time. 
+
 ## Building
 
 - `./gradlew jar` for a simple jar that contains only the plugin code.
@@ -67,9 +71,3 @@ If you run on v135 or lower, you will need [mod-loader](https://github.com/Xpdus
 ## Support
 
 Strange error codes ? Crashes ? Report them in the [Xpdustry discord server](https://discord.xpdustry.fr) in the **#support** channel.
-
-## TODO
-
-- [ ] Implement auto reconnection logic.
-
-- [ ] Improve logging.

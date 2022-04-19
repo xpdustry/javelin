@@ -89,6 +89,11 @@ tasks.create("createRelease") {
     }
 }
 
+tasks.shadowJar {
+    relocate("com.google.inject", "fr.xpdustry.javelin.internal.guice")
+    minimize()
+}
+
 signing {
     val signingKey: String? by project
     val signingPassword: String? by project

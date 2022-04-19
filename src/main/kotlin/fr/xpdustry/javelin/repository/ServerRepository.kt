@@ -5,7 +5,6 @@ import fr.xpdustry.javelin.model.Endpoint
 import fr.xpdustry.javelin.model.Server
 
 interface ServerRepository {
-
     val servers: Collection<Server>
 
     fun addServer(name: String, token: String, endpoints: MutableSet<Endpoint>): Server?

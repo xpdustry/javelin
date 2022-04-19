@@ -3,12 +3,15 @@ package fr.xpdustry.javelin
 import arc.ApplicationListener
 import arc.util.Log
 import com.auth0.jwt.JWT
+import com.auth0.jwt.exceptions.JWTDecodeException
+import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.gson.GsonBuilder
 import com.google.inject.ImplementedBy
 import fr.xpdustry.javelin.internal.JavelinClientConfig
 import fr.xpdustry.javelin.model.Endpoint
 import fr.xpdustry.javelin.model.registerEndpointTypeAdapter
 import fr.xpdustry.javelin.util.fromJson
+import fr.xpdustry.javelin.util.getDraft
 import org.java_websocket.client.WebSocketClient
 import org.java_websocket.handshake.ServerHandshake
 import java.util.*
@@ -28,9 +31,9 @@ sealed interface JavelinClient : ApplicationListener {
 }
 
 @Singleton
-private class SimpleJavelinClient @Inject constructor(private val config: JavelinClientConfig) : JavelinClient, WebSocketClient(config.host) {
+private class SimpleJavelinClient @Inject constructor(private val config: JavelinClientConfig) : JavelinClient, WebSocketClient(config.host, getDraft(config.https)) {
     private val handlers = mutableMapOf<Endpoint, MessageHandler>()
-    private val jwt = JWT.decode(config.token)
+    private val jwt: DecodedJWT
     private val gson = GsonBuilder()
         .setPrettyPrinting()
         .registerEndpointTypeAdapter()
@@ -38,11 +41,17 @@ private class SimpleJavelinClient @Inject constructor(private val config: Javeli
 
     init {
         addHeader("Authorization", "Bearer ${config.token}")
+        connectionLostTimeout = config.timeout
+        try {
+            jwt = JWT.decode(config.token)
+        } catch (e: JWTDecodeException) {
+            throw RuntimeException("The client token is invalid.", e)
+        }
     }
 
     override fun init() {
         Log.info("JAVELIN-CLIENT: Connecting to ${config.host}...")
-        if (!connectBlocking(10, TimeUnit.SECONDS)) {
+        if (!connectBlocking(15, TimeUnit.SECONDS)) {
             Log.info("JAVELIN-CLIENT: Failed to connect to ${config.host}.")
         }
     }

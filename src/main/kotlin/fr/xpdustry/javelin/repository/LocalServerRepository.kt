@@ -8,7 +8,6 @@ import fr.xpdustry.javelin.util.typeToken
 import net.mindustry_ddns.store.JsonFileStore
 
 class LocalServerRepository(path: String) : ServerRepository {
-
     override val servers: Collection<Server>
         get() = store.get()
 

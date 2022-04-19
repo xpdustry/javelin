@@ -5,7 +5,6 @@ import org.aeonbits.owner.Config
 import java.net.URI
 
 interface JavelinClientConfig : Accessible {
-
     @get:Config.DefaultValue("false")
     @get:Config.Key("javelin.client.enabled")
     val enabled: Boolean
@@ -17,4 +16,12 @@ interface JavelinClientConfig : Accessible {
     @get:Config.DefaultValue("insert-token-here")
     @get:Config.Key("javelin.client.token")
     val token: String
+
+    @get:Config.DefaultValue("false")
+    @get:Config.Key("javelin.client.https")
+    val https: Boolean
+
+    @get:Config.DefaultValue("60")
+    @get:Config.Key("javelin.client.timeout")
+    val timeout: Int
 }

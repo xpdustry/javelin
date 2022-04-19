@@ -1,1 +1,3 @@
-- Initial release
+- Some bug fixes + optimizations.
+- Added better debug.
+- Added new configuration properties.

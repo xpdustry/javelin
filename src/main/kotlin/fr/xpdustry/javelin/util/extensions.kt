@@ -6,6 +6,9 @@ import fr.xpdustry.distributor.Distributor
 import fr.xpdustry.distributor.message.MessageIntent
 import fr.xpdustry.distributor.message.format.MessageFormatter
 import io.leangen.geantyref.TypeToken
+import org.java_websocket.drafts.Draft
+import org.java_websocket.drafts.Draft_6455
+import org.java_websocket.protocols.Protocol
 
 private val EMPTY_ARRAY = emptyArray<Any>()
 
@@ -28,3 +31,20 @@ fun MessageFormatter.format(message: String, intent: MessageIntent = MessageInte
 inline fun <reified T> typeToken(): TypeToken<T> = object : TypeToken<T>() {}
 
 inline fun <reified T> Gson.fromJson(json: String): T = fromJson(json, typeToken<T>().type)
+
+/*
+fun getHttpsDraft(): Draft {
+    val protocols = mutableListOf<IProtocol>()
+    protocols += Protocol("ocpp2.0")
+    protocols += Protocol("")
+    return Draft_6455(emptyList(), protocols)
+}
+ */
+
+fun getDraft(https: Boolean): Draft {
+    return if (https) {
+        Draft_6455(emptyList(), listOf(Protocol("ocpp2.0")))
+    } else {
+        Draft_6455()
+    }
+}

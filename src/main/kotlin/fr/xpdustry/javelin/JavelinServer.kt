@@ -12,6 +12,7 @@ import fr.xpdustry.javelin.model.Server
 import fr.xpdustry.javelin.model.registerEndpointTypeAdapter
 import fr.xpdustry.javelin.repository.ServerRepository
 import fr.xpdustry.javelin.util.fromJson
+import fr.xpdustry.javelin.util.getDraft
 import org.java_websocket.WebSocket
 import org.java_websocket.drafts.Draft
 import org.java_websocket.exceptions.InvalidDataException
@@ -34,7 +35,7 @@ private class SimpleJavelinServer @Inject constructor(
     private val config: JavelinServerConfig,
     private val repository: ServerRepository,
     algorithm: Algorithm
-) : WebSocketServer(InetSocketAddress(config.port), config.workers), JavelinServer {
+) : WebSocketServer(InetSocketAddress(config.port), config.workers, listOf(getDraft(config.https))), JavelinServer {
     private companion object {
         const val AUTHORIZATION_HEADER = "Authorization"
         val AUTHORIZATION_REGEX = Regex("^Bearer .+$")
@@ -66,8 +67,14 @@ private class SimpleJavelinServer @Inject constructor(
         val builder = super.onWebsocketHandshakeReceivedAsServer(connection, draft, handshake)
         val authorization = handshake.getFieldValue(AUTHORIZATION_HEADER)
 
-        if (handshake.resourceDescriptor != "/" || !authorization.matches(AUTHORIZATION_REGEX)) {
-            throw InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid!")
+        if (handshake.resourceDescriptor != config.path) {
+            Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid resource descriptor: @).", connection.remoteSocketAddress)
+            throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
+        }
+
+        if (!authorization.matches(AUTHORIZATION_REGEX)) {
+            Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid authorization header: @).", connection.remoteSocketAddress)
+            throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
         }
 
         val token = authorization.split(' ', limit = 2)[1]
@@ -76,14 +83,21 @@ private class SimpleJavelinServer @Inject constructor(
             val verified = verifier.verify(token)
             val server = repository[verified.subject!!]
 
-            if (server == null || isConnected(server) || server.token != token) {
-                throw InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid token!!")
-            } else {
-                connection.setAttachment(server)
-                return builder
+            if (server == null || server.token != token) {
+                Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid token).", connection.remoteSocketAddress)
+                throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
             }
+
+            if (isConnected(server)) {
+                Log.debug("JAVELIN-SERVER: Rejecting connection @ (Already connected).", connection.remoteSocketAddress)
+                throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
+            }
+
+            connection.setAttachment(server)
+            return builder
         } catch (e: JWTVerificationException) {
-            throw InvalidDataException(CloseFrame.POLICY_VALIDATION, "Unauthorized!!")
+            Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid token).", connection.remoteSocketAddress)
+            throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
         }
     }
 

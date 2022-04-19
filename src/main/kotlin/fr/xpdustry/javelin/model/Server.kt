@@ -10,7 +10,6 @@ import com.google.gson.stream.JsonWriter
 data class Server(val name: String, var token: String, val endpoints: MutableSet<Endpoint>)
 
 data class Endpoint(val namespace: String, val subject: String) {
-
     override fun toString(): String = "$namespace:$subject"
 
     object EndpointTypeAdapter : TypeAdapter<Endpoint>() {
