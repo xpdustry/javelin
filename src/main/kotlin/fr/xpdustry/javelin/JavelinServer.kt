@@ -27,6 +27,9 @@ import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinServer::class)
 sealed interface JavelinServer : ApplicationListener {
+    val open: Boolean
+        @get:JvmName("isOpen") get
+
     fun isConnected(client: Client): Boolean
 }
 
@@ -51,12 +54,17 @@ private class SimpleJavelinServer @Inject constructor(
         .registerEndpointTypeAdapter()
         .create()
 
+    override var open: Boolean = false
+        private set
+
     override fun init() {
         start()
+        open = true
     }
 
     override fun dispose() {
         stop(5000)
+        open = false
     }
 
     override fun isConnected(client: Client): Boolean =
@@ -124,14 +132,18 @@ private class SimpleJavelinServer @Inject constructor(
     }
 
     override fun onMessage(connection: WebSocket, incoming: String) {
-        val message = gson.fromJson<JavelinMessage>(incoming)
+        var message = gson.fromJson<JavelinMessage>(incoming)
         Log.debug("JAVELIN-SERVER: Incoming message from ${connection.client.name} > $incoming.")
 
-        if (message.receiver == null) {
-            broadcast(incoming, connections.minus(connection).filter { message.endpoint in it.client.endpoints })
+        message = message.copy(sender = connection.client.name)
+
+        if (!connection.client.isAllowed(message.endpoint)) {
+            return
+        } else if (message.receiver == null) {
+            broadcast(incoming, connections.minus(connection).filter { it.client.isAllowed(message.endpoint) })
         } else {
             connections
-                .find { it.client.name == message.receiver && message.endpoint in it.client.endpoints }
+                .find { it.client.name == message.receiver && it.client.isAllowed(message.endpoint) }
                 ?.send(incoming)
         }
     }

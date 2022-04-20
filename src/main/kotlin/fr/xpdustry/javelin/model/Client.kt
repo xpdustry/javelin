@@ -6,11 +6,16 @@ import com.google.gson.TypeAdapter
 import com.google.gson.stream.JsonReader
 import com.google.gson.stream.JsonWriter
 
-data class Client @JvmOverloads constructor(
+data class Client constructor(
     val name: String,
     var token: String,
-    val endpoints: MutableSet<Endpoint> = mutableSetOf()
-)
+    val blacklist: MutableSet<Endpoint>,
+    val whitelist: MutableSet<Endpoint>
+) {
+    constructor(name: String, token: String): this(name, token, mutableSetOf(), mutableSetOf())
+
+    fun isAllowed(endpoint: Endpoint): Boolean = !(endpoint in blacklist && endpoint !in whitelist)
+}
 
 data class Endpoint(val namespace: String, val subject: String) {
     override fun toString(): String = "$namespace:$subject"

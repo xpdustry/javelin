@@ -2,9 +2,6 @@ package fr.xpdustry.javelin
 
 import arc.ApplicationListener
 import arc.util.Log
-import com.auth0.jwt.JWT
-import com.auth0.jwt.exceptions.JWTDecodeException
-import com.auth0.jwt.interfaces.DecodedJWT
 import com.google.gson.GsonBuilder
 import com.google.inject.ImplementedBy
 import fr.xpdustry.javelin.internal.JavelinClientConfig
@@ -13,47 +10,64 @@ import fr.xpdustry.javelin.model.registerEndpointTypeAdapter
 import fr.xpdustry.javelin.util.fromJson
 import fr.xpdustry.javelin.util.getDraft
 import org.java_websocket.client.WebSocketClient
+import org.java_websocket.exceptions.WebsocketNotConnectedException
 import org.java_websocket.handshake.ServerHandshake
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.CompletableFuture
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinClient::class)
 sealed interface JavelinClient : ApplicationListener {
+    val connected: Boolean
+        @get:JvmName("isConnected") get
+
+    fun restart()
+
     fun send(endpoint: Endpoint, message: Any, receiver: String)
 
     fun broadcast(endpoint: Endpoint, message: Any)
 
-    fun registerMessageHandler(handler: MessageHandler)
+    fun registerEndpoint(endpoint: Endpoint, handler: JavelinMessageHandler)
 
-    fun unregisterMessageHandler(handler: MessageHandler)
+    fun unregisterEndpoint(endpoint: Endpoint)
 }
 
 @Singleton
 private class SimpleJavelinClient @Inject constructor(
     private val config: JavelinClientConfig
 ) : JavelinClient, WebSocketClient(config.host, getDraft(config.wss)) {
-    private val handlers = mutableMapOf<Endpoint, MessageHandler>()
-    private val jwt: DecodedJWT
+    private var connectTask: CompletableFuture<Void>? = null
+    private val handlers = mutableMapOf<Endpoint, JavelinMessageHandler>()
     private val gson = GsonBuilder()
         .setPrettyPrinting()
         .registerEndpointTypeAdapter()
         .create()
 
+    override val connected: Boolean
+        get() = this.isOpen
+
     init {
         addHeader("Authorization", "Bearer ${config.token}")
         connectionLostTimeout = config.timeout
-        try {
-            jwt = JWT.decode(config.token)
-        } catch (e: JWTDecodeException) {
-            throw RuntimeException("The client token is invalid.", e)
-        }
     }
 
     override fun init() {
-        Log.info("JAVELIN-CLIENT: Connecting to ${config.host}...")
-        if (!connectBlocking(15, TimeUnit.SECONDS)) {
-            Log.info("JAVELIN-CLIENT: Failed to connect to ${config.host}.")
+        checkConnectTask()
+        connectTask = CompletableFuture.runAsync {
+            Log.info("JAVELIN-CLIENT: Connecting to ${config.host}...")
+            if (!connectBlocking()) {
+                Log.info("JAVELIN-CLIENT: Failed to connect to ${config.host}.")
+            }
+        }
+    }
+
+    override fun restart() {
+        checkConnectTask()
+        connectTask = CompletableFuture.runAsync {
+            Log.info("JAVELIN-CLIENT: Reconnecting to ${config.host}...")
+            if (!reconnectBlocking()) {
+                Log.info("JAVELIN-CLIENT: Failed to reconnect to ${config.host}.")
+            }
         }
     }
 
@@ -66,18 +80,21 @@ private class SimpleJavelinClient @Inject constructor(
     }
 
     private fun sendMessage(endpoint: Endpoint, message: Any, receiver: String? = null) {
-        Log.debug("JAVELIN-CLIENT: Sending ${if (receiver == null) "broadcast" else ""} message to endpoint $endpoint $message.")
-        send(gson.toJson(JavelinMessage(endpoint, gson.toJson(message), message.javaClass.name, jwt.subject, receiver)))
+        Log.debug("JAVELIN-CLIENT: Sending ${if (receiver == null) "broadcast" else ""} message to endpoint $endpoint > $message.")
+        try {
+            send(gson.toJson(JavelinMessage(endpoint, gson.toJson(message), message.javaClass.name, "unknown", receiver)))
+        } catch (ignored: WebsocketNotConnectedException) {
+            Log.debug("JAVELIN-CLIENT: Failed to send a message because not connected...")
+        }
     }
 
-    override fun registerMessageHandler(handler: MessageHandler) {
-        if (handler.endpoint in handlers)
-            throw IllegalStateException("The endpoint ${handler.endpoint} has been registered twice.")
-        handlers[handler.endpoint] = handler
+    override fun registerEndpoint(endpoint: Endpoint, handler: JavelinMessageHandler) {
+        if (endpoint in handlers) throw IllegalStateException("The endpoint $endpoint has been registered twice.")
+        handlers[endpoint] = handler
     }
 
-    override fun unregisterMessageHandler(handler: MessageHandler) {
-        handlers -= handler.endpoint
+    override fun unregisterEndpoint(endpoint: Endpoint) {
+        handlers -= endpoint
     }
 
     override fun onOpen(handshakedata: ServerHandshake?) {
@@ -111,7 +128,11 @@ private class SimpleJavelinClient @Inject constructor(
         Log.err("JAVELIN-CLIENT: An unexpected exception occurred.", ex)
     }
 
-    override fun dispose() {
-        if (!isClosed) closeBlocking()
+    override fun exit() {
+        if (connected) close()
+    }
+
+    private fun checkConnectTask() {
+        if (connectTask != null && !connectTask!!.isDone) connectTask!!.cancel(true)
     }
 }

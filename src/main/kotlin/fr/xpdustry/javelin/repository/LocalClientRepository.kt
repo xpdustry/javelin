@@ -10,7 +10,7 @@ internal class LocalClientRepository(path: String) : ClientRepository {
     override val clients: Collection<Client>
         get() = store.get()
 
-    private val store = JsonFileStore.load<MutableList<Client>>(
+    private val store = JsonFileStore<MutableList<Client>>(
         path,
         typeToken<MutableList<Client>>().type,
         ::mutableListOf,
@@ -19,6 +19,10 @@ internal class LocalClientRepository(path: String) : ClientRepository {
             .registerEndpointTypeAdapter()
             .create()
     )
+
+    init {
+        if (store.file.exists()) store.load()
+    }
 
     override fun addClient(client: Client): Boolean {
         if (!hasClient(client.name)) {
