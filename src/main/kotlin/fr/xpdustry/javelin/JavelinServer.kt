@@ -26,7 +26,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinServer::class)
-interface JavelinServer : ApplicationListener {
+sealed interface JavelinServer : ApplicationListener {
     fun isConnected(client: Client): Boolean
 }
 
@@ -84,19 +84,19 @@ private class SimpleJavelinServer @Inject constructor(
 
         try {
             val verified = verifier.verify(token)
-            val server = repository[verified.subject!!]
+            val client = repository[verified.subject!!]
 
-            if (server == null || server.token != token) {
+            if (client == null || client.token != token) {
                 Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid token).", connection.remoteSocketAddress)
                 throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
             }
 
-            if (isConnected(server)) {
+            if (isConnected(client)) {
                 Log.debug("JAVELIN-SERVER: Rejecting connection @ (Already connected).", connection.remoteSocketAddress)
                 throw InvalidDataException(CloseFrame.POLICY_VALIDATION)
             }
 
-            connection.setAttachment(server)
+            connection.setAttachment(client)
             return builder
         } catch (e: JWTVerificationException) {
             Log.debug("JAVELIN-SERVER: Rejecting connection @ (Invalid token).", connection.remoteSocketAddress)
@@ -112,20 +112,20 @@ private class SimpleJavelinServer @Inject constructor(
         Log.info("JAVELIN-SERVER: @ server has connected.", con.client.name)
     }
 
-    override fun onClose(con: WebSocket, code: Int, reason: String, remote: Boolean) {
+    override fun onClose(connection: WebSocket, code: Int, reason: String, remote: Boolean) {
         if (!remote) {
-            Log.info("JAVELIN-SERVER: @ server has unexpectedly disconnected: @", con.client.name, reason)
+            Log.info("JAVELIN-SERVER: @ server has unexpectedly disconnected: @", connection.client.name, reason)
         } else {
-            Log.info("JAVELIN-SERVER: @ server has disconnected: @", con.client.name, reason)
+            Log.info("JAVELIN-SERVER: @ server has disconnected: @", connection.client.name, reason)
         }
     }
 
-    override fun onMessage(con: WebSocket, incoming: String) {
+    override fun onMessage(connection: WebSocket, incoming: String) {
         val message = gson.fromJson<JavelinMessage>(incoming)
-        Log.debug("JAVELIN-SERVER: Incoming message from ${con.client.name} > $incoming.")
+        Log.debug("JAVELIN-SERVER: Incoming message from ${connection.client.name} > $incoming.")
 
         if (message.receiver == null) {
-            broadcast(incoming, connections.minus(con).filter { message.endpoint in it.client.endpoints })
+            broadcast(incoming, connections.minus(connection).filter { message.endpoint in it.client.endpoints })
         } else {
             connections
                 .find { it.client.name == message.receiver && message.endpoint in it.client.endpoints }
@@ -137,11 +137,11 @@ private class SimpleJavelinServer @Inject constructor(
         connection.close(CloseFrame.REFUSE)
     }
 
-    override fun onError(con: WebSocket?, ex: Exception) {
-        if (con == null) {
+    override fun onError(connection: WebSocket?, ex: Exception) {
+        if (connection == null) {
             Log.err("JAVELIN-SERVER: An exception has occurred in the javelin server.", ex)
         } else {
-            Log.err("JAVELIN-SERVER: An exception has occurred in the ${con.client.name} remote client.", ex)
+            Log.err("JAVELIN-SERVER: An exception has occurred in the ${connection.client.name} remote client.", ex)
         }
     }
 

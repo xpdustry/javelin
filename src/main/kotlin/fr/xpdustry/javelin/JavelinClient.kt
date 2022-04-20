@@ -19,7 +19,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @ImplementedBy(SimpleJavelinClient::class)
-interface JavelinClient : ApplicationListener {
+sealed interface JavelinClient : ApplicationListener {
     fun send(endpoint: Endpoint, message: Any, receiver: String)
 
     fun broadcast(endpoint: Endpoint, message: Any)
