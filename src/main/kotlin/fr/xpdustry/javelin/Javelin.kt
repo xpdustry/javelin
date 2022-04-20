@@ -74,7 +74,7 @@ class Javelin : AbstractPlugin() {
     override fun registerClientCommands(manager: ArcCommandManager) {
         manager.command(manager.commandBuilder("global", "g")
             .meta(ArcMeta.DESCRIPTION, "Send a message globally to all servers.")
-            .meta(ArcMeta.PARAMETERS, "[message...]")
+            .meta(ArcMeta.PARAMETERS, "<message...>")
             .argument(StringArgument.greedy("message"))
             .handler {
                 val context = GlobalChatContext(it.sender.player.name(), it["message"])

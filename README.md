@@ -30,6 +30,8 @@ A simple and fast communication system for Mindustry servers, enabling powerful 
 
 4. Restart all the servers and now, they all should be linked. If you have errors, turn on debug with the `config debug true` command and try again. If you can't figure out the problem, I'll be happy to help you in the **#support** channel of the [Xpdustry Discord server](https://discord.xpdustry.fr).
 
+The plugin offers a global chat command by default with `/global <message>` or `/g <message>`.
+
 ### Managing service access
 
 Javelin communicates using endpoints, where messages are handled. You can regulate the access of specific endpoints with blacklists and whitelists.
@@ -58,7 +60,7 @@ repositories {
 
 dependencies {
     // Add "-SNAPSHOT" after the version if you are using the snapshot repository
-    compileOnly("fr.xpdustry:javelin:0.3.0" )
+    compileOnly("fr.xpdustry:javelin:0.3.1" )
 }
 ```
 
