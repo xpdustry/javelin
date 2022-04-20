@@ -71,7 +71,8 @@ private class SimpleJavelinClient @Inject constructor(
     }
 
     override fun registerMessageHandler(handler: MessageHandler) {
-        if (handler.endpoint in handlers) throw IllegalStateException()
+        if (handler.endpoint in handlers)
+            throw IllegalStateException("The endpoint ${handler.endpoint} has been registered twice.")
         handlers[handler.endpoint] = handler
     }
 
@@ -93,8 +94,8 @@ private class SimpleJavelinClient @Inject constructor(
             handlers[message.endpoint]?.onMessageReceive(message, content)
         } catch (e: ClassNotFoundException) {
             Log.debug("Unhandled message class ${message.clazz} for ${message.endpoint}.")
-        } catch (e: ClassCastException) {
-            Log.err("Failed cast for typed endpoint ${message.endpoint}.", e)
+        } catch (e: Exception) {
+            Log.err("An unexpected exception occurred while handling a message for ${message.endpoint}.", e)
         }
     }
 

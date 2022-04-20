@@ -91,7 +91,10 @@ tasks.create("createRelease") {
 }
 
 tasks.shadowJar {
-    relocate("com.google.inject", "fr.xpdustry.javelin.internal.guice")
+    val destination = "fr.xpdustry.javelin.internal"
+    relocate("com.google.inject", "$destination.guice")
+    relocate("com.fasterxml.jackson", "$destination.jackson")
+    relocate("org.slf4j", "$destination.slf4j")
     minimize()
 }
 

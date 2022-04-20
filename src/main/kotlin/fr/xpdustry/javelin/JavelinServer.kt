@@ -59,6 +59,9 @@ private class SimpleJavelinServer @Inject constructor(
         stop(5000)
     }
 
+    override fun isConnected(client: Client): Boolean =
+        connections.find { it.client == client } != null
+
     @Throws(InvalidDataException::class)
     override fun onWebsocketHandshakeReceivedAsServer(
         connection: WebSocket,
@@ -144,9 +147,6 @@ private class SimpleJavelinServer @Inject constructor(
             Log.err("JAVELIN-SERVER: An exception has occurred in the ${connection.client.name} remote client.", ex)
         }
     }
-
-    override fun isConnected(client: Client): Boolean =
-        connections.find { it.client == client } != null
 
     private val WebSocket.client: Client
         get() = getAttachment()

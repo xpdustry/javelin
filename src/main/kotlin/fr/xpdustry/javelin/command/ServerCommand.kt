@@ -26,7 +26,7 @@ class ServerCommand @Inject constructor(
     @CommandMethod("javelin server add <name>")
     @CommandDescription("Create a new Javelin client.")
     internal fun addClient(sender: ArcCommandSender, @Argument("name") name: String) {
-        val client = Client(name, createAccessToken(name))
+        val client = Client(name, createToken(name))
         if (repository.addClient(client)) {
             sender.sendMessage("Added server $name.")
             sender.sendMessage("TOKEN: ${client.token}")
@@ -58,7 +58,7 @@ class ServerCommand @Inject constructor(
     @CommandMethod("javelin server token reset <client>")
     @CommandDescription("Reset the token of a Javelin client.")
     internal fun resetClientToken(sender: ArcCommandSender, @Argument("client") client: Client) {
-        client.token = createAccessToken(client.name)
+        client.token = createToken(client.name)
         sender.sendMessage("The new token of ${client.name} is ${client.token}.")
     }
 
@@ -112,7 +112,7 @@ class ServerCommand @Inject constructor(
         }
     }
 
-    private fun createAccessToken(name: String): String = JWT
+    private fun createToken(name: String): String = JWT
         .create()
         .withSubject(name)
         .withIssuedAt(Date())
