@@ -82,7 +82,7 @@ Here is an example class that can synchronize ban events :
 
 ```java
 public class BanSynchronizer implements JavelinMessageHandler {
-    private static final Endpoint ENDPOINT = new Endpoint("net.mindustry_ddns", "ban-sync");
+    private static final Endpoint ENDPOINT = new Endpoint("xpdustry-moderation", "ban-sync");
 
     public BanSynchronizer() {
         Javelin.getClient().registerEndpoint(ENDPOINT, this);
