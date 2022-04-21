@@ -78,6 +78,30 @@ Finally, in your code, get the client with `Javelin.getClient()`, check if it's 
 
 You can `send` or `broadcast` any message you like, as long as it is serializable by `Gson`.
 
+Here is an example class that can synchronize ban events :
+
+```java
+public class BanSynchronizer implements JavelinMessageHandler {
+    private static final Endpoint ENDPOINT = new Endpoint("net.mindustry_ddns", "ban-sync");
+
+    public BanSynchronizer() {
+        Javelin.getClient().registerEndpoint(ENDPOINT, this);
+        
+        Events.on(EventType.PlayerBanEvent.class, e -> {
+            Javelin.getClient().broadcast(ENDPOINT, e.uuid);
+        });
+    }
+
+    @Override
+    public void onMessageReceive(JavelinMessage message, Object content) {
+        var uuid = (String)content;
+        Vars.netServer.admins.banPlayer(uuid);
+        var player = Groups.player.find(p -> p.uuid().equals(uuid));
+        if (player != null) player.kick(Packets.KickReason.banned);
+    }
+}
+```
+
 ### Tips
 
 - In the client config, if you set `javelin.client.timeout` to `0`, Your client will always reconnect to your main server, even if it has been down for a long time. 
