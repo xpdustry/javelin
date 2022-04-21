@@ -128,8 +128,8 @@ public class BanSynchronizer implements JavelinMessageHandler {
    }
 
    upstream javelin {
-       # I use pterodactyl pannel so I use the node url, if you don't, use 127.0.0.1 or localhost
-       # 12000 is the port of my javelin main server
+       # I use pterodactyl pannel so I use the node url "n1.xpdustry.fr", if you don't, use 127.0.0.1 or localhost
+       # 12000 is the port of my javelin server
        server n1.xpdustry.fr:12000;
        keepalive 64;
    }
