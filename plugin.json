@@ -4,7 +4,7 @@
   "author": "Xpdustry",
   "description": "A plugin for cross server communication.",
   "version": "0.3.1",
-  "minGameVersion": "v126.2",
+  "minGameVersion": "126.2",
   "hidden": true,
   "java": true,
   "main": "fr.xpdustry.javelin.Javelin",

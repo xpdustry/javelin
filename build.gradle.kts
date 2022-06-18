@@ -1,38 +1,32 @@
-import fr.xpdustry.toxopid.extension.ModDependency
+import fr.xpdustry.toxopid.ModPlatform
 import fr.xpdustry.toxopid.util.ModMetadata
-import fr.xpdustry.toxopid.extension.ModTarget
-import java.io.ByteArrayOutputStream
+import fr.xpdustry.toxopid.util.anukenJitpack
+import fr.xpdustry.toxopid.util.mindustryDependencies
 
 plugins {
     kotlin("jvm") version "1.6.10"
+    id("com.github.johnrengelman.shadow") version "7.1.2"
     id("net.kyori.indra") version "2.1.1"
     id("net.kyori.indra.publishing") version "2.1.1"
-    id("fr.xpdustry.toxopid") version "1.3.2"
-    id("com.github.ben-manes.versions") version "0.42.0"
+    id("fr.xpdustry.toxopid") version "2.0.0"
 }
 
-val metadata = ModMetadata(file("${rootProject.rootDir}/plugin.json"))
+val metadata = ModMetadata.fromJson(file("${rootProject.rootDir}/plugin.json"))
+metadata.version += if (hasProperty("releaseProject") && property("releaseProject").toString().toBoolean()) "" else "-SNAPSHOT"
+
 group = property("props.project-group").toString()
-version = metadata.version + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
+version = metadata.version
 
 toxopid {
-    modTarget.set(ModTarget.HEADLESS)
-    arcCompileVersion.set(metadata.minGameVersion)
-    mindustryCompileVersion.set(metadata.minGameVersion)
-
-    mindustryRepository.set(fr.xpdustry.toxopid.extension.MindustryRepository.BE)
-    mindustryRuntimeVersion.set("22350")
-
-    modDependencies.set(listOf(
-        ModDependency("Xpdustry/Distributor", "v2.6.1", "distributor-core.jar"),
-        ModDependency("Xpdustry/KotlinRuntimePlugin", "v1.0.0", "xpdustry-kotlin-stdlib.jar")
-    ))
+    compileVersion.set("v" + metadata.minGameVersion)
+    platforms.add(ModPlatform.HEADLESS)
 }
 
 repositories {
     mavenCentral()
+    anukenJitpack()
     maven("https://repo.xpdustry.fr/releases") {
-        name = "xpdustry-releases-repository"
+        name = "xpdustry-repository-releases"
         mavenContent {
             includeGroupByRegex("fr\\.xpdustry|net\\.mindustry_ddns")
             releasesOnly()
@@ -42,14 +36,15 @@ repositories {
 
 dependencies {
     compileOnly(kotlin("stdlib"))
+    mindustryDependencies()
 
     val distributor = "2.6.1"
     compileOnly("fr.xpdustry:distributor-core:$distributor")
     testImplementation("fr.xpdustry:distributor-core:$distributor")
 
-    implementation("org.java-websocket:Java-WebSocket:1.5.2")
+    implementation("org.java-websocket:Java-WebSocket:1.5.3")
     implementation("com.google.inject:guice:5.1.0")
-    implementation("com.auth0:java-jwt:3.19.1")
+    implementation("com.auth0:java-jwt:3.19.2")
     implementation("org.slf4j:slf4j-simple:1.7.36")
 
     val junit = "5.8.2"
@@ -68,35 +63,20 @@ tasks.create("getArtifactPath") {
     doLast { println(tasks.shadowJar.get().archiveFile.get().toString()) }
 }
 
-tasks.create("createRelease") {
-    dependsOn("requireClean")
-
-    doLast {
-        // Checks if a signing key is present
-        val signing = ByteArrayOutputStream().use { out ->
-            exec {
-                commandLine("git", "config", "--global", "user.signingkey")
-                standardOutput = out
-            }.run { exitValue == 0 && out.toString().isNotBlank() }
-        }
-
-        exec {
-            commandLine(arrayListOf("git", "tag", "v${metadata.version}", "-F", "./CHANGELOG.md", "-a").apply { if (signing) add("-s") })
-        }
-
-        exec {
-            commandLine("git", "push", "origin", "--tags")
-        }
-    }
-}
-
 tasks.shadowJar {
+    doFirst {
+        val temp = temporaryDir.resolve("plugin.json")
+        temp.writeText(metadata.toJson(true))
+        from(temp)
+    }
     val destination = "fr.xpdustry.javelin.internal"
     relocate("com.google.inject", "$destination.guice")
     relocate("com.fasterxml.jackson", "$destination.jackson")
     relocate("org.slf4j", "$destination.slf4j")
     minimize()
 }
+
+tasks.build.get().dependsOn(tasks.shadowJar)
 
 signing {
     val signingKey: String? by project
@@ -115,8 +95,8 @@ indra {
 
     gpl3OnlyLicense()
 
-    if (metadata.repo != null) {
-        val repo = metadata.repo!!.split("/")
+    if (metadata.repo.isNotBlank()) {
+        val repo = metadata.repo.split("/")
         github(repo[0], repo[1]) {
             ci(true)
             issues(true)
