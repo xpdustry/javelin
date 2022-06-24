@@ -47,30 +47,18 @@ public class JavelinClient implements Closeable {
     kryo.setOptimizedGenerics(false);
   }
 
-  public void connect() throws IOException {
-    try {
-      client.connectBlocking();
-    } catch (final InterruptedException e) {
-      throw new IOException("Interrupted connect operation.", e);
-    }
+  public void connect() {
+    client.connect();
   }
 
-  public void reconnect() throws IOException {
-    try {
-      client.reconnectBlocking();
-    } catch (final InterruptedException e) {
-      throw new IOException("Interrupted reconnect operation.", e);
-    }
+  public void reconnect() {
+    client.reconnect();
   }
 
   @Override
-  public void close() throws IOException {
-    try {
-      client.closeBlocking();
-      executor.shutdown();
-    } catch (final InterruptedException e) {
-      throw new IOException("Interrupted close operation.");
-    }
+  public void close() {
+    client.close();
+    executor.shutdown();
   }
 
   public <T> void broadcastMessage(final @NotNull MessageContext<T> context, final @NotNull T message) throws MessageSendException {
@@ -81,11 +69,11 @@ public class JavelinClient implements Closeable {
     send(context, message, receiver);
   }
 
-  public <T> void bindReceiver(@NotNull MessageContext<T> context, @NotNull MessageReceiver<T> receiver) {
+  public <T> void bindReceiver(@NotNull MessageContext<? extends T> context, @NotNull MessageReceiver<T> receiver) {
     receivers.put(context, receiver);
   }
 
-  public <T> void unbindReceiver(@NotNull MessageContext<T> context, @NotNull MessageReceiver<T> receiver) {
+  public <T> void unbindReceiver(@NotNull MessageContext<? extends T> context, @NotNull MessageReceiver<T> receiver) {
     receivers.remove(context, receiver);
   }
 
@@ -125,7 +113,7 @@ public class JavelinClient implements Closeable {
 
     public JavelinWebSocketClient(final @NotNull URI remote) {
       super(remote, new Draft_6455(Collections.singletonList(new PerMessageDeflateExtension()), List.of(new Protocol(""), new Protocol("ocpp2.0"))));
-      final var userPass = username + ":" + new String(password);
+      final var userPass = username + ':' + String.valueOf(password);
       final var encoded = Base64.getEncoder().encodeToString(userPass.getBytes(StandardCharsets.UTF_8));
       addHeader("Authorization", "Basic " + encoded);
     }

@@ -27,8 +27,8 @@ public class JavelinServer implements Closeable {
   private final Authenticator authenticator;
   private final AtomicBoolean started = new AtomicBoolean(false);
 
-  public JavelinServer(final int port, final @NotNull Authenticator authenticator) {
-    this.server = new JavelinWebSocketServer(port);
+  public JavelinServer(final int port, final int workers, final @NotNull Authenticator authenticator) {
+    this.server = new JavelinWebSocketServer(port, workers);
     this.authenticator = authenticator;
   }
 
@@ -38,11 +38,10 @@ public class JavelinServer implements Closeable {
   }
 
   @Override
-  public void close() throws IOException {
+  public void close() {
     try {
       server.stop();
-    } catch (InterruptedException e) {
-      throw new IOException("The server closing has been interrupted.", e);
+    } catch (InterruptedException ignored) {
     } finally {
       started.set(false);
     }
@@ -69,8 +68,8 @@ public class JavelinServer implements Closeable {
     private static final String AUTHORIZATION = "Authorization";
     private static final Pattern BASIC_AUTHORIZATION = Pattern.compile("^Basic (.+)$");
 
-    public JavelinWebSocketServer(final int port) {
-      super(new InetSocketAddress(port), List.of(new Draft_6455(Collections.singletonList(new PerMessageDeflateExtension()), List.of(new Protocol(""), new Protocol("ocpp2.0")))));
+    public JavelinWebSocketServer(final int port, final int workers) {
+      super(new InetSocketAddress(port), workers, List.of(new Draft_6455(Collections.singletonList(new PerMessageDeflateExtension()), List.of(new Protocol(""), new Protocol("ocpp2.0")))));
       setReuseAddr(true);
     }
 
@@ -139,7 +138,7 @@ public class JavelinServer implements Closeable {
         final var receiver = input.readString();
         final Collection<WebSocket> receivers;
         if (receiver == null) {
-          receivers = getConnections();
+          receivers = new ArrayList<>(getConnections());
           receivers.remove(conn);
         } else {
           receivers = getConnections().stream()
