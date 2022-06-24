@@ -33,7 +33,6 @@ tasks.shadowJar {
         temp.writeText(metadata.toJson(true))
         from(temp)
     }
-    minimize()
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")
     }

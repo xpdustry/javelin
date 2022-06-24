@@ -5,11 +5,5 @@ plugins {
 
 dependencies {
     api(project(":javelin-core"))
+    runtimeOnly("org.slf4j:slf4j-simple:1.7.36")
 }
-
-val relocate = tasks.create<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocateShadowJar") {
-    target = tasks.shadowJar.get()
-    prefix = "fr.xpdustry.javelin.plugin.shadow"
-}
-
-tasks.shadowJar.get().dependsOn(relocate)

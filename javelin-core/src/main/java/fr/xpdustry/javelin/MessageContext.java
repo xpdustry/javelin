@@ -6,15 +6,15 @@ import org.jetbrains.annotations.*;
 public final class MessageContext<T> {
 
   private final String namespace;
-  private final String subject;
+  private final String endpoint;
   private final Class<T> messageType;
 
-  public MessageContext(final @NotNull String namespace, final @NotNull String subject, final @NotNull Class<T> messageType) {
+  public MessageContext(final @NotNull String namespace, final @NotNull String endpoint, final @NotNull Class<T> messageType) {
     if (namespace.contains(":")) {
       throw new IllegalArgumentException("namespace contains a colon (" + namespace + ").");
     }
     this.namespace = namespace;
-    this.subject = subject;
+    this.endpoint = endpoint;
     this.messageType = messageType;
   }
 
@@ -22,8 +22,8 @@ public final class MessageContext<T> {
     return namespace;
   }
 
-  public @NotNull String getSubject() {
-    return subject;
+  public @NotNull String getEndpoint() {
+    return endpoint;
   }
 
   public @NotNull Class<T> getMessageType() {
@@ -37,18 +37,18 @@ public final class MessageContext<T> {
     } else {
       return o instanceof MessageContext<?> that
         && namespace.equals(that.namespace)
-        && subject.equals(that.subject)
+        && endpoint.equals(that.endpoint)
         && messageType.equals(that.messageType);
     }
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(namespace, subject, messageType);
+    return Objects.hash(namespace, endpoint, messageType);
   }
 
   @Override
   public String toString() {
-    return namespace + ":" + subject;
+    return namespace + ":" + endpoint;
   }
 }
