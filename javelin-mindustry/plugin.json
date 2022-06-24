@@ -5,6 +5,6 @@
   "minGameVersion": "126.2",
   "hidden": true,
   "java": true,
-  "main": "fr.xpdustry.javelin.plugin.JavelinPlugin",
+  "main": "fr.xpdustry.javelin.JavelinPlugin",
   "repo": "Xpdustry/Javelin"
 }
