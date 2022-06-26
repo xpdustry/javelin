@@ -1,6 +1,7 @@
 plugins {
     id("net.kyori.indra")
     id("net.kyori.indra.publishing")
+    id("net.kyori.indra.license-header")
 }
 
 repositories {
@@ -16,6 +17,10 @@ dependencies {
     val jetbrains = "23.0.0"
     compileOnly("org.jetbrains:annotations:$jetbrains")
     testCompileOnly("org.jetbrains:annotations:$jetbrains")
+}
+
+license {
+    header(rootProject.file("LICENSE_HEADER.md"))
 }
 
 signing {
