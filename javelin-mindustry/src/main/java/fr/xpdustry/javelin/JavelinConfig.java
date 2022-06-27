@@ -36,4 +36,6 @@ public interface JavelinConfig {
   char[] getClientPassword();
 
   @NotNull URI getClientServerUri();
+
+  int getClientConnectionLostTimeout();
 }

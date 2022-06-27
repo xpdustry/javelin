@@ -18,6 +18,56 @@
  */
 package fr.xpdustry.javelin;
 
-public class JavelinCommand {
-  // TODO...
+import arc.util.*;
+import org.jetbrains.annotations.*;
+
+final class JavelinCommand {
+
+  private final UserAuthenticator authenticator;
+
+  public JavelinCommand(final @NotNull UserAuthenticator authenticator) {
+    this.authenticator = authenticator;
+  }
+
+  public void registerServerCommands(final @NotNull CommandHandler handler) {
+    handler.register("javelin-client-reconnect", "Tries to reconnect the Javelin client.", args -> {
+      final var client = JavelinPlugin.getClient();
+      if (client == null) {
+        Log.info("The client is not available.");
+      } else {
+        Log.info("The client will be reconnected.");
+        client.reconnect();
+      }
+    });
+
+    handler.register("javelin-server-user-add", "<username> <password>", "Add a new user to the server.", args -> {
+      if (authenticator.existsUser(args[0])) {
+        Log.info("The user " + args[0] + " has been override.");
+      } else {
+        Log.info("The user " + args[0] + " has been added.");
+      }
+      authenticator.saveUser(args[0], args[1].toCharArray());
+    });
+
+    handler.register("javelin-server-user-remove", "<username>", "Removes a user from the server.", args -> {
+      if (authenticator.existsUser(args[0])) {
+        authenticator.deleteUser(args[0]);
+        Log.info("The user " + args[0] + " has been removed.");
+      } else {
+        Log.info("The user " + args[0] + " does not exists.");
+      }
+    });
+
+    handler.register("javelin-server-user-list", "List the users.", args -> {
+      final var users = authenticator.findAllUsers();
+      if (users.isEmpty()) {
+        Log.info("No users...");
+      } else {
+        Log.info("Users: " + ColorCodes.blue + users.size());
+        for (final var user : users) {
+          Log.info("\t- " + ColorCodes.blue + user);
+        }
+      }
+    });
+  }
 }

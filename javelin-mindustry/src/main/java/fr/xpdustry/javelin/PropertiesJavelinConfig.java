@@ -31,7 +31,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     CLIENT_ENABLED_KEY =      "fr.xpdustry.javelin.client.enabled",
     CLIENT_USERNAME_KEY =     "fr.xpdustry.javelin.client.username",
     CLIENT_PASSWORD_KEY =     "fr.xpdustry.javelin.client.password",
-    CLIENT_SERVER_URI_KEY =   "fr.xpdustry.javelin.client.address";
+    CLIENT_SERVER_URI_KEY =   "fr.xpdustry.javelin.client.address",
+    CLIENT_CONNECTION_KEY =   "fr.xpdustry.javelin.client.timeout";
 
   private static final Properties DEFAULTS = new Properties();
 
@@ -43,7 +44,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
       CLIENT_ENABLED_KEY,       "false",
       CLIENT_USERNAME_KEY,      "unknown",
       CLIENT_PASSWORD_KEY,      "unknown",
-      CLIENT_SERVER_URI_KEY,    "ws://localhost:8080"
+      CLIENT_SERVER_URI_KEY,    "ws://localhost:8080",
+      CLIENT_CONNECTION_KEY,    "60"
     ));
   }
 
@@ -91,5 +93,10 @@ final class PropertiesJavelinConfig implements JavelinConfig {
   @Override
   public @NotNull URI getClientServerUri() {
     return URI.create(properties.getProperty(CLIENT_SERVER_URI_KEY));
+  }
+
+  @Override
+  public int getClientConnectionLostTimeout() {
+    return Integer.parseInt(properties.getProperty(CLIENT_CONNECTION_KEY));
   }
 }

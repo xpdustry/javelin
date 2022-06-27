@@ -19,19 +19,21 @@
 package fr.xpdustry.javelin;
 
 import arc.*;
-import arc.files.*;
 import arc.util.*;
 import java.io.*;
+import java.nio.charset.*;
 import java.util.*;
 import mindustry.mod.*;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.*;
 
-@SuppressWarnings("NullAway.Init")
 public final class JavelinPlugin extends Plugin {
 
-  private static final Fi CONFIG_FILE = new Fi("./javelin.properties");
-  private static final Authenticator authenticator = new SimpleAuthenticator();
+  private static final File DIRECTORY = new File("javelin");
+  private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
+
+  private static final UserAuthenticator authenticator = new SimpleUserAuthenticator(DIRECTORY);
+  private static final JavelinCommand commands = new JavelinCommand(authenticator);
 
   private static JavelinConfig config;
   private static JavelinServer server;
@@ -45,73 +47,65 @@ public final class JavelinPlugin extends Plugin {
     return server;
   }
 
-  public static JavelinConfig getConf() {
+  public static @NotNull JavelinConfig getConf() {
     return config;
   }
 
+  @SuppressWarnings("ResultOfMethodCallIgnored")
   @Override
   public void init() {
+    DIRECTORY.mkdir();
     config = readConfig();
 
     if (config.isServerEnabled()) {
-      server = JavelinServer.websocket(config.getServerPort(), config.getServerWorkerCount(), authenticator);
+      server = new JavelinServer(config.getServerPort(), config.getServerWorkerCount(), authenticator);
 
       Core.app.addListener(new ApplicationListener() {
         @Override
         public void init() {
-          try {
-            server.start();
-          } catch (IOException e) {
-            throw new RuntimeException("Failed to start Javelin server.");
-          }
+          server.start();
         }
 
         @Override
         public void exit() {
-          try {
-            server.close();
-          } catch (IOException e) {
-            Log.err("Failed to close javelin server.", e);
-          }
+          server.close();
         }
       });
     }
 
     if (config.isClientEnabled()) {
-      client = JavelinClient.websocket(config.getClientUsername(), config.getClientPassword(), config.getClientServerUri());
+      client = new JavelinClient(config.getClientServerUri(), config.getClientUsername(), config.getClientPassword());
+      client.setConnectionLostTimeout(config.getClientConnectionLostTimeout());
 
       Core.app.addListener(new ApplicationListener() {
         @Override
         public void init() {
-          try {
-            client.connect();
-          } catch (IOException e) {
-            throw new RuntimeException("Failed to start Javelin client.");
-          }
+          client.connect();
         }
 
         @Override
         public void exit() {
-          try {
-            client.close();
-          } catch (IOException e) {
-            Log.err("Failed to close javelin client.", e);
-          }
+          client.close();
         }
       });
     }
   }
 
+  @Override
+  public void registerServerCommands(final @NotNull CommandHandler handler) {
+    commands.registerServerCommands(handler);
+  }
+
   private @NotNull JavelinConfig readConfig() {
     final var properties = new Properties();
     if (CONFIG_FILE.exists()) {
-      try (final var reader = CONFIG_FILE.reader()) {
+      try (final var reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
         properties.load(reader);
       } catch (IOException e) {
         throw new RuntimeException("Invalid config.", e);
       }
     } else {
-      try (final var writer = CONFIG_FILE.writer(false)) {
+      try (final var writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
         PropertiesJavelinConfig.getDefaults().store(writer, null);
       } catch (IOException e) {
         throw new RuntimeException("Can't create default config for Javelin.", e);

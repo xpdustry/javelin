@@ -18,10 +18,20 @@
  */
 package fr.xpdustry.javelin;
 
+import java.util.*;
 import org.jetbrains.annotations.*;
 
-@FunctionalInterface
-public interface Authenticator {
+public interface UserAuthenticator extends JavelinServer.Authenticator {
 
-  boolean isValid(final @NotNull String username, final char[] password);
+  void saveUser(final @NotNull String username, final char[] password);
+
+  boolean existsUser(final @NotNull String username);
+
+  long countUsers();
+
+  @NotNull List<String> findAllUsers();
+
+  void deleteUser(final @NotNull String username);
+
+  void deleteAllUsers();
 }
