@@ -155,7 +155,7 @@ public class JavelinClient implements Closeable {
         final var receiver = receivers.get(context);
         if (receiver != null) {
           final var message = kryo.readObject(input, messageType);
-          executor.execute(() -> receiver.handleMessage(message, sender));
+          executor.execute(() -> receiver.onMessageReceive(message, sender));
         }
         logger.trace("Received message from {} (context={})", sender, context);
       }
