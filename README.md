@@ -92,6 +92,30 @@ with `isConnected()` and enjoy.
 
 You can `send` or `broadcast` any message you like, as long as it is serializable by `Gson`.
 
+Here is an example class that can synchronize ban events :
+
+```java
+public class BanSynchronizer implements JavelinMessageHandler {
+    private static final Endpoint ENDPOINT = new Endpoint("xpdustry-moderation", "ban-sync");
+
+    public BanSynchronizer() {
+        Javelin.getClient().registerEndpoint(ENDPOINT, this);
+        
+        Events.on(EventType.PlayerBanEvent.class, e -> {
+            Javelin.getClient().broadcast(ENDPOINT, e.uuid);
+        });
+    }
+
+    @Override
+    public void onMessageReceive(JavelinMessage message, Object content) {
+        var uuid = (String)content;
+        Vars.netServer.admins.banPlayer(uuid);
+        var player = Groups.player.find(p -> p.uuid().equals(uuid));
+        if (player != null) player.kick(Packets.KickReason.banned);
+    }
+}
+```
+
 ### Tips
 
 - In the client config, if you set `javelin.client.timeout` to `0`, Your client will always
@@ -120,8 +144,8 @@ You can `send` or `broadcast` any message you like, as long as it is serializabl
   }
 
   upstream javelin {
-      # I use pterodactyl pannel so I use the node url, if you don't, use 127.0.0.1 or localhost
-      # 12000 is the port of my javelin main server
+      # I use pterodactyl pannel so I use the node url "n1.xpdustry.fr", if you don't, use 127.0.0.1 or localhost
+      # 12000 is the port of my javelin server
       server n1.xpdustry.fr:12000;
       keepalive 64;
   }
