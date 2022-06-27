@@ -7,59 +7,39 @@
 ## Description
 
 A simple and fast communication system for Mindustry servers, enabling powerful features such as
-global chats and synced moderation.
+global chats, synced moderation, discord integrations, etc...
 
 ## Usage
 
 ### First set up
 
 1. Install the plugin on all the servers you wish to link and start them, it will create the
-   necessary config files in the `./distributor/plugins/xpdustry-javelin-plugin` directory.
+   necessary config files in the `./javelin` directory.
 
-2. Choose a main server and generate a secret key with the `javelin server generate-secret` command.
-   Once generated, stop the main server and set the following values in
-   the `server-config.properties` file :
+2. For the Javelin server, you can create one in one of your mindustry servers by setting 
+   `fr.xpdustry.javelin.server.enabled` to true in the `./javelin/config.properties` config file.
+   Also set `fr.xpdustry.javelin.server.port` for the port.
 
-    - `javelin.server.enabled` to `true` to enable the server.
+3. Once the server is set up, register your users with the `javelin-server-user-add` command.
+   They are stored in a binary file (`./javelin/users.bin`) by default. Passwords are encrypted
+   so no worries about security in most cases.
 
-    - `javelin.server.secret` to the generated secret key.
+4. For each Mindustry server that need to connect to Javelin, in the config file, set :
+   
+   - `fr.xpdustry.javelin.client.enabled` to true.
 
-3. Start the main server again, and add the servers you wish to link with
-   the `javelin server add <name>` command. It will generate a token for each server so copy them
-   and set the following values in the `client-config.properties` file of the servers :
+   - `fr.xpdustry.javelin.client.username` with its registered username.
 
-- `javelin.client.enabled` to `true` to enable the client.
+   - `fr.xpdustry.javelin.client.password` with its registered password.
 
-- `javelin.client.token` to the generated token.
+   - `fr.xpdustry.javelin.client.address` with the server address.
 
-> You also need to create a client for the main server.
+5. Now, your Javelin network should be ready, enjoy.
 
-4. Restart all the servers and now, they all should be linked. If you have errors, turn on debug
-   with the `config debug true` command and try again. If you can't figure out the problem, I'll be
-   happy to help you in the **#support** channel of
+   > If you need any help, We'll be happy to help you in the **#support** channel of
    the [Xpdustry Discord server](https://discord.xpdustry.fr).
-
-The plugin offers a global chat command by default with `/global <message>` or `/g <message>`.
-
-### Managing service access
-
-Javelin communicates using endpoints, where messages are handled. You can regulate the access of
-specific endpoints with blacklists and whitelists.
-
-To do so, use the
-commands `javelin server blacklist/whitelist add/remove <name> <namespace> <subject>` where :
-
-- `name` is the server name.
-
-- `namespace` is the internal name of the plugin responsible for the endpoint (
-  example: `xpdustry-javelin`).
-
-- `subject` is the name of the specific handler that handles the message (example: `global-chat`).
-
-So if you want, for example to disable the built-in global chat command for a specific server,
-do `javelin server blacklist add <server> xpdustry-javelin global-chat`.
-
-### Api
+   
+### Javelin API
 
 It's very simple.
 
@@ -73,7 +53,7 @@ repositories {
 
 dependencies {
     // Add "-SNAPSHOT" after the version if you are using the snapshot repository
-    compileOnly("fr.xpdustry:javelin:0.3.1" )
+    compileOnly("fr.xpdustry:javelin-mindustry:1.0.0" )
 }
 ```
 
@@ -90,27 +70,35 @@ Then, update your `plugin.json` file with :
 Finally, in your code, get the client with `Javelin.getClient()`, check if it's connected
 with `isConnected()` and enjoy.
 
-You can `send` or `broadcast` any message you like, as long as it is serializable by `Gson`.
+You can send or broadcast any message you like, but .
 
 Here is an example class that can synchronize ban events :
 
 ```java
-public class BanSynchronizer implements JavelinMessageHandler {
-    private static final Endpoint ENDPOINT = new Endpoint("xpdustry-moderation", "ban-sync");
+public final class BanSynchronizer implements MessageReceiver<String> {
+
+    private static final MessageContext<String> CONTEXT = new MessageContext<>("xpdustry-moderation", "ban-sync", String.class);
 
     public BanSynchronizer() {
-        Javelin.getClient().registerEndpoint(ENDPOINT, this);
-        
+        // Binds this object for receiving incoming messages from other servers.
+        JavelinPlugin.getClient().bindReceiver(CONTEXT, this);
+
         Events.on(EventType.PlayerBanEvent.class, e -> {
-            Javelin.getClient().broadcast(ENDPOINT, e.uuid);
+            final JavelinClient client = JavelinPlugin.getClient();
+            try {
+                if (client.isConnected()) {
+                    client.broadcastMessage(CONTEXT, e.uuid);
+                }
+            } catch (final IOException ex) {
+                Log.err("An unexpected exception occurred while broadcasting a ban.", ex);
+            }
         });
     }
 
     @Override
-    public void onMessageReceive(JavelinMessage message, Object content) {
-        var uuid = (String)content;
+    public void onMessageReceive(final @NotNull String uuid, final @Nullable String sender) {
         Vars.netServer.admins.banPlayer(uuid);
-        var player = Groups.player.find(p -> p.uuid().equals(uuid));
+        final Player player = Groups.player.find(p -> p.uuid().equals(uuid));
         if (player != null) player.kick(Packets.KickReason.banned);
     }
 }
@@ -118,23 +106,13 @@ public class BanSynchronizer implements JavelinMessageHandler {
 
 ### Tips
 
-- In the client config, if you set `javelin.client.timeout` to `0`, Your client will always
-  reconnect to your main server, even if it has been down for a long time.
+- In the client config, if you set `fr.xpdustry.javelin.client.timeout` to 0, your client will
+  always reconnect to your Javelin server, even if it has been down for a long time.
 
-- You can explicitly reconnect a Javelin client with the `javelin client reconnect` command.
+- You can explicitly reconnect a Javelin client with the `javelin-client-reconnect` command.
 
-- You can reset the token of a specific server with `javelin server token reset <name>`.
-
-- List all the registered servers with `javelin server list`
-
-- If you have https enabled on your server domain with a reverse proxy (nginx, Apache web server,
-  ...), enable the secure websocket protocol by setting :
-
-    - `javelin.server.wss` to `true` in the `server-config.properties` file in the main server.
-
-    - `javelin.client.wss` to `true` in the `client-config.properties` file of each client.
-
-  Then change the config of your reverse proxy. Example with nginx + let's encrypt / certbot :
+- You can add `wss` support on javelin with a reverse proxy like nginx.
+  Example let's encrypt / certbot :
 
   ```nginx
   # This is required to upgrade the websocket connection
@@ -182,8 +160,6 @@ public class BanSynchronizer implements JavelinMessageHandler {
   ```
 
   Now, your javelin server is accessible with `wss://javelin.yourdomain.something/`.
-
-  Your server will also refuse any normal websocket connection now.
 
 ## Building
 
