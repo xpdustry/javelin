@@ -24,7 +24,6 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import mindustry.mod.*;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.*;
 
 public final class JavelinPlugin extends Plugin {
@@ -39,11 +38,11 @@ public final class JavelinPlugin extends Plugin {
   private static JavelinServer server;
   private static JavelinClient client;
 
-  public static @Nullable JavelinClient getClient() {
+  public static @NotNull JavelinClient getClient() {
     return client;
   }
 
-  public static @Nullable JavelinServer getServer() {
+  public static @NotNull JavelinServer getServer() {
     return server;
   }
 
@@ -57,9 +56,9 @@ public final class JavelinPlugin extends Plugin {
     DIRECTORY.mkdir();
     config = readConfig();
 
-    if (config.isServerEnabled()) {
-      server = new JavelinServer(config.getServerPort(), config.getServerWorkerCount(), authenticator);
+    server = new JavelinServer(config.getServerPort(), config.getServerWorkerCount(), authenticator);
 
+    if (config.isServerEnabled()) {
       Core.app.addListener(new ApplicationListener() {
         @Override
         public void init() {
@@ -73,10 +72,10 @@ public final class JavelinPlugin extends Plugin {
       });
     }
 
-    if (config.isClientEnabled()) {
-      client = new JavelinClient(config.getClientServerUri(), config.getClientUsername(), config.getClientPassword());
-      client.setConnectionLostTimeout(config.getClientConnectionLostTimeout());
+    client = new JavelinClient(config.getClientServerUri(), config.getClientUsername(), config.getClientPassword());
+    client.setConnectionLostTimeout(config.getClientConnectionLostTimeout());
 
+    if (config.isClientEnabled()) {
       Core.app.addListener(new ApplicationListener() {
         @Override
         public void init() {

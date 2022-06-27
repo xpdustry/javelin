@@ -31,12 +31,11 @@ final class JavelinCommand {
 
   public void registerServerCommands(final @NotNull CommandHandler handler) {
     handler.register("javelin-client-reconnect", "Tries to reconnect the Javelin client.", args -> {
-      final var client = JavelinPlugin.getClient();
-      if (client == null) {
-        Log.info("The client is not available.");
+      if (JavelinPlugin.getConf().isClientEnabled()) {
+        Log.info("The client is not enabled.");
       } else {
         Log.info("The client will be reconnected.");
-        client.reconnect();
+        JavelinPlugin.getClient().reconnect();
       }
     });
 
