@@ -35,14 +35,14 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
   private static final int DERIVED_KEY_LENGTH = 160; // for SHA1
   private static final int ITERATIONS = 20000; // NIST specifies 10000
 
-  private final File storage;
+  private final File file;
   private final Map<String, EncryptedPassword> users = new HashMap<>();
 
-  SimpleUserAuthenticator(final @NotNull File directory) {
-    this.storage = new File(directory, "users.bin");
+  SimpleUserAuthenticator(final @NotNull File file) {
+    this.file = file;
 
-    if (this.storage.exists()) {
-      try (final var input = new DataInputStream(new FileInputStream(this.storage))) {
+    if (this.file.exists()) {
+      try (final var input = new DataInputStream(new FileInputStream(this.file))) {
         final var entries = input.readInt();
         for (var i = 0; i < entries; i++) {
           final var username = input.readUTF();
@@ -59,7 +59,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
   }
 
   @Override
-  public boolean isValid(final @NotNull String username, final char[] password) {
+  public boolean authenticate(final @NotNull String username, final char[] password) {
     final var encrypted = users.get(username);
     return encrypted != null && encrypted.equals(getEncryptedPassword(password, encrypted.salt));
   }
@@ -99,8 +99,8 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     save();
   }
 
-  private synchronized void save() {
-    try (final var output = new DataOutputStream(new FileOutputStream(storage))) {
+  private void save() {
+    try (final var output = new DataOutputStream(new FileOutputStream(file))) {
       output.writeInt(users.size());
       for (final var entry : users.entrySet()) {
         output.writeUTF(entry.getKey());
@@ -109,7 +109,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
         output.writeByte(entry.getValue().salt.length);
         output.write(entry.getValue().salt);
       }
-    } catch (IOException e) {
+    } catch (final IOException e) {
       throw new RuntimeException("Unable to save user authenticator users.", e);
     }
   }

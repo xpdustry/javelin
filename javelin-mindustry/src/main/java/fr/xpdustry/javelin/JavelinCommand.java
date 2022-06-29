@@ -23,10 +23,10 @@ import org.jetbrains.annotations.*;
 
 final class JavelinCommand {
 
-  private final UserAuthenticator authenticator;
+  private final UserAuthenticator users;
 
-  public JavelinCommand(final @NotNull UserAuthenticator authenticator) {
-    this.authenticator = authenticator;
+  public JavelinCommand(final @NotNull UserAuthenticator users) {
+    this.users = users;
   }
 
   public void registerServerCommands(final @NotNull CommandHandler handler) {
@@ -40,17 +40,17 @@ final class JavelinCommand {
     });
 
     handler.register("javelin-server-user-add", "<username> <password>", "Add a new user to the server.", args -> {
-      if (authenticator.existsUser(args[0])) {
+      if (users.existsUser(args[0])) {
         Log.info("The user " + args[0] + " has been override.");
       } else {
         Log.info("The user " + args[0] + " has been added.");
       }
-      authenticator.saveUser(args[0], args[1].toCharArray());
+      users.saveUser(args[0], args[1].toCharArray());
     });
 
     handler.register("javelin-server-user-remove", "<username>", "Removes a user from the server.", args -> {
-      if (authenticator.existsUser(args[0])) {
-        authenticator.deleteUser(args[0]);
+      if (users.existsUser(args[0])) {
+        users.deleteUser(args[0]);
         Log.info("The user " + args[0] + " has been removed.");
       } else {
         Log.info("The user " + args[0] + " does not exists.");
@@ -58,7 +58,7 @@ final class JavelinCommand {
     });
 
     handler.register("javelin-server-user-list", "List the users.", args -> {
-      final var users = authenticator.findAllUsers();
+      final var users = this.users.findAllUsers();
       if (users.isEmpty()) {
         Log.info("No users...");
       } else {

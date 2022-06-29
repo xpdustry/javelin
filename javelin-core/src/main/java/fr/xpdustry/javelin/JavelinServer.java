@@ -74,9 +74,10 @@ public class JavelinServer implements Closeable {
     }
   }
 
+  @FunctionalInterface
   public interface Authenticator {
 
-    boolean isValid(final @NotNull String username, final char[] password);
+    boolean authenticate(final @NotNull String username, final char[] password);
   }
 
   private static final class JavelinWebSocketServer extends WebSocketServer {
@@ -120,7 +121,7 @@ public class JavelinServer implements Closeable {
         throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid credential format.");
       }
 
-      if (!authenticator.isValid(username, password)) {
+      if (!authenticator.authenticate(username, password)) {
         throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, "Invalid credentials.");
       }
       if (isConnected(username)) {

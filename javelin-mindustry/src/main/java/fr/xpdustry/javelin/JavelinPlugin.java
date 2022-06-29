@@ -30,8 +30,9 @@ public final class JavelinPlugin extends Plugin {
 
   private static final File DIRECTORY = new File("javelin");
   private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
+  private static final File USERS_FILE = new File(DIRECTORY, "users.bin");
 
-  private static final UserAuthenticator authenticator = new SimpleUserAuthenticator(DIRECTORY);
+  private static final UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
   private static final JavelinCommand commands = new JavelinCommand(authenticator);
 
   private static JavelinConfig config;
@@ -54,8 +55,8 @@ public final class JavelinPlugin extends Plugin {
   @Override
   public void init() {
     DIRECTORY.mkdir();
-    config = readConfig();
 
+    config = readConfig();
     server = new JavelinServer(config.getServerPort(), config.getServerWorkerCount(), authenticator);
 
     if (config.isServerEnabled()) {
@@ -100,13 +101,13 @@ public final class JavelinPlugin extends Plugin {
     if (CONFIG_FILE.exists()) {
       try (final var reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
         properties.load(reader);
-      } catch (IOException e) {
+      } catch (final IOException e) {
         throw new RuntimeException("Invalid config.", e);
       }
     } else {
       try (final var writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
         PropertiesJavelinConfig.getDefaults().store(writer, null);
-      } catch (IOException e) {
+      } catch (final IOException e) {
         throw new RuntimeException("Can't create default config for Javelin.", e);
       }
     }
