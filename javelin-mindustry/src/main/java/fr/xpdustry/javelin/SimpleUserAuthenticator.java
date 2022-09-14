@@ -1,5 +1,5 @@
 /*
- * Javelin, a cross server communication library for Mindustry.
+ * Javelin, a simple communication protocol for broadcasting events on a network.
  *
  * Copyright (C) 2022 Xpdustry
  *
@@ -22,6 +22,8 @@ import java.io.*;
 import java.security.*;
 import java.security.spec.*;
 import java.util.*;
+import java.util.concurrent.*;
+import java.util.zip.*;
 import javax.crypto.*;
 import javax.crypto.spec.*;
 import org.jetbrains.annotations.*;
@@ -31,18 +33,18 @@ import org.jetbrains.annotations.*;
  */
 final class SimpleUserAuthenticator implements UserAuthenticator {
 
-  private static final String ALGORITHM = "PBKDF2WithHmacSHA1";
-  private static final int DERIVED_KEY_LENGTH = 160; // for SHA1
-  private static final int ITERATIONS = 20000; // NIST specifies 10000
+  private static final String ALGORITHM = "PBKDF2WithHmacSHA256";
+  private static final int DERIVED_KEY_LENGTH = 256;
+  private static final int ITERATIONS = 100000;
 
+  private final Map<String, EncryptedPassword> users = new ConcurrentHashMap<>();
   private final File file;
-  private final Map<String, EncryptedPassword> users = new HashMap<>();
 
   SimpleUserAuthenticator(final @NotNull File file) {
     this.file = file;
 
     if (this.file.exists()) {
-      try (final var input = new DataInputStream(new FileInputStream(this.file))) {
+      try (final var input = new DataInputStream(new GZIPInputStream(new FileInputStream(this.file)))) {
         final var entries = input.readInt();
         for (var i = 0; i < entries; i++) {
           final var username = input.readUTF();
@@ -59,7 +61,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
   }
 
   @Override
-  public boolean authenticate(final @NotNull String username, final char[] password) {
+  public boolean authenticate(final @NotNull String username, final char @NotNull [] password) {
     final var encrypted = users.get(username);
     return encrypted != null && encrypted.equals(getEncryptedPassword(password, encrypted.salt));
   }
@@ -82,8 +84,8 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
   }
 
   @Override
-  public @NotNull List<String> findAllUsers() {
-    return new ArrayList<>(users.keySet());
+  public @NotNull @Unmodifiable List<String> findAllUsers() {
+    return List.copyOf(users.keySet());
   }
 
   @Override
@@ -99,8 +101,8 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     save();
   }
 
-  private void save() {
-    try (final var output = new DataOutputStream(new FileOutputStream(file))) {
+  private synchronized void save() {
+    try (final var output = new DataOutputStream(new GZIPOutputStream(new FileOutputStream(file)))) {
       output.writeInt(users.size());
       for (final var entry : users.entrySet()) {
         output.writeUTF(entry.getKey());

@@ -2,7 +2,7 @@
   "name": "xpdustry-javelin",
   "displayName": "Xpdustry Javelin",
   "author": "Xpdustry",
-  "minGameVersion": "126.2",
+  "minGameVersion": "126",
   "hidden": true,
   "java": true,
   "main": "fr.xpdustry.javelin.JavelinPlugin",

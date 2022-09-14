@@ -1,5 +1,5 @@
 /*
- * Javelin, a cross server communication library for Mindustry.
+ * Javelin, a simple communication protocol for broadcasting events on a network.
  *
  * Copyright (C) 2022 Xpdustry
  *
@@ -20,35 +20,38 @@ package fr.xpdustry.javelin;
 
 import arc.*;
 import arc.util.*;
+import fr.xpdustry.javelin.JavelinConfig.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import mindustry.mod.*;
 import org.jetbrains.annotations.*;
+import org.jetbrains.annotations.Nullable;
 
 public final class JavelinPlugin extends Plugin {
 
   private static final File DIRECTORY = new File("javelin");
   private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
-  private static final File USERS_FILE = new File(DIRECTORY, "users.bin");
+  private static final File USERS_FILE = new File(DIRECTORY, "users.bin.gz");
 
-  private static final UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
-  private static final JavelinCommand commands = new JavelinCommand(authenticator);
-
+  private static UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
   private static JavelinConfig config;
-  private static JavelinServer server;
-  private static JavelinClient client;
+  private static @Nullable JavelinSocket socket = null;
 
-  public static @NotNull JavelinClient getClient() {
-    return client;
+  public static @NotNull UserAuthenticator getUserAuthenticator() {
+    return authenticator;
   }
 
-  public static @NotNull JavelinServer getServer() {
-    return server;
+  public static void setUserAuthenticator(final @NotNull UserAuthenticator authenticator) {
+    JavelinPlugin.authenticator = authenticator;
   }
 
-  public static @NotNull JavelinConfig getConf() {
+  public static @NotNull JavelinConfig getJavelinConfig() {
     return config;
+  }
+
+  public static @Nullable JavelinSocket getJavelinSocket() {
+    return socket;
   }
 
   @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -57,43 +60,72 @@ public final class JavelinPlugin extends Plugin {
     DIRECTORY.mkdir();
 
     config = readConfig();
-    server = new JavelinServer(config.getServerPort(), config.getServerWorkerCount(), authenticator);
 
-    if (config.isServerEnabled()) {
-      Core.app.addListener(new ApplicationListener() {
-        @Override
-        public void init() {
-          server.start();
-        }
-
-        @Override
-        public void exit() {
-          server.close();
-        }
-      });
+    if (config.getMode() == Mode.SERVER) {
+      socket = JavelinSocket.server(
+        config.getServerPort(),
+        config.getWorkerCount(),
+        authenticator
+      );
+    } else if (config.getMode() == Mode.CLIENT) {
+      socket = JavelinSocket.client(
+        config.getClientServerUri(),
+        config.getClientUsername(),
+        config.getClientPassword(),
+        config.getWorkerCount()
+      );
     }
 
-    client = new JavelinClient(config.getClientServerUri(), config.getClientUsername(), config.getClientPassword());
-    client.setConnectionLostTimeout(config.getClientConnectionLostTimeout());
-
-    if (config.isClientEnabled()) {
-      Core.app.addListener(new ApplicationListener() {
-        @Override
-        public void init() {
-          client.connect();
-        }
-
-        @Override
-        public void exit() {
-          client.close();
-        }
-      });
+    if (socket != null) {
+      Core.app.addListener(new JavelinApplicationListener(socket));
     }
   }
 
   @Override
   public void registerServerCommands(final @NotNull CommandHandler handler) {
-    commands.registerServerCommands(handler);
+    handler.register("javelin-user-add", "<username> <password>", "Add a new user to the server.", args -> {
+      if (authenticator.existsUser(args[0])) {
+        Log.info("The user " + args[0] + " has been override.");
+      } else {
+        Log.info("The user " + args[0] + " has been added.");
+      }
+      authenticator.saveUser(args[0], args[1].toCharArray());
+    });
+
+    handler.register("javelin-user-remove", "<username>", "Removes a user from the server.", args -> {
+      if (authenticator.existsUser(args[0])) {
+        authenticator.deleteUser(args[0]);
+        Log.info("The user " + args[0] + " has been removed.");
+      } else {
+        Log.info("The user " + args[0] + " does not exists.");
+      }
+    });
+
+    handler.register("javelin-user-remove-all", "Removes all users from the server.", args -> {
+      final var count = authenticator.countUsers();
+      authenticator.deleteAllUsers();
+      Log.info("@ users have been removed.", count);
+    });
+
+    handler.register("javelin-user-list", "List the users.", args -> {
+      final var users = authenticator.findAllUsers();
+      if (users.isEmpty()) {
+        Log.info("No users...");
+      } else {
+        Log.info("Users: " + ColorCodes.blue + users.size());
+        for (final var user : users) {
+          Log.info("\t- " + ColorCodes.blue + user);
+        }
+      }
+    });
+
+    handler.register("javelin-status", "Gets the status of the javelin socket.", args -> {
+      if (socket != null) {
+        Log.info("The javelin socket is currently @.", socket.getStatus());
+      } else {
+        Log.info("The javelin socket is not active.");
+      }
+    });
   }
 
   private @NotNull JavelinConfig readConfig() {
@@ -112,5 +144,24 @@ public final class JavelinPlugin extends Plugin {
       }
     }
     return new PropertiesJavelinConfig(properties);
+  }
+
+  private static final class JavelinApplicationListener implements ApplicationListener {
+
+    private final JavelinSocket socket;
+
+    private JavelinApplicationListener(final JavelinSocket socket) {
+      this.socket = socket;
+    }
+
+    @Override
+    public void init() {
+      socket.start();
+    }
+
+    @Override
+    public void dispose() {
+      socket.close();
+    }
   }
 }

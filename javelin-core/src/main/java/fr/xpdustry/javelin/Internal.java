@@ -18,24 +18,23 @@
  */
 package fr.xpdustry.javelin;
 
-import java.net.*;
-import org.jetbrains.annotations.*;
+import java.util.*;
+import java.util.regex.*;
+import org.java_websocket.drafts.*;
+import org.java_websocket.extensions.permessage_deflate.*;
+import org.java_websocket.protocols.*;
 
-public interface JavelinConfig {
+final class Internal {
 
-  @NotNull Mode getMode();
+  public static final int MAX_EVENT_SIZE = 8192;
 
-  int getServerPort();
+  public static final String AUTHORIZATION_HEADER = "Authorization";
+  public static final Pattern AUTHORIZATION_PATTERN = Pattern.compile("^Basic (.+)$");
 
-  @NotNull String getClientUsername();
-
-  char[] getClientPassword();
-
-  @NotNull URI getClientServerUri();
-
-  int getWorkerCount();
-
-  enum Mode {
-    NONE, SERVER, CLIENT
+  public static Draft getJavelinDraft() {
+    return new Draft_6455(
+      Collections.singletonList(new PerMessageDeflateExtension()),
+      List.of(new Protocol(""), new Protocol("ocpp2.0"))
+    );
   }
 }

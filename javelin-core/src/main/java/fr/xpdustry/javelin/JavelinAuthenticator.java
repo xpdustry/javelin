@@ -1,5 +1,5 @@
 /*
- * Javelin, a cross server communication library for Mindustry.
+ * Javelin, a simple communication protocol for broadcasting events on a network.
  *
  * Copyright (C) 2022 Xpdustry
  *
@@ -21,7 +21,7 @@ package fr.xpdustry.javelin;
 import org.jetbrains.annotations.*;
 
 @FunctionalInterface
-public interface MessageReceiver<T> {
+public interface JavelinAuthenticator {
 
-  void onMessageReceive(final @NotNull T message, final @Nullable String sender);
+  boolean authenticate(final @NotNull String username, final char@NotNull[] password);
 }

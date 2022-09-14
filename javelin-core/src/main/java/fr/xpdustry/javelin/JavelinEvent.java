@@ -18,24 +18,6 @@
  */
 package fr.xpdustry.javelin;
 
-import java.net.*;
-import org.jetbrains.annotations.*;
+public interface JavelinEvent {
 
-public interface JavelinConfig {
-
-  @NotNull Mode getMode();
-
-  int getServerPort();
-
-  @NotNull String getClientUsername();
-
-  char[] getClientPassword();
-
-  @NotNull URI getClientServerUri();
-
-  int getWorkerCount();
-
-  enum Mode {
-    NONE, SERVER, CLIENT
-  }
 }

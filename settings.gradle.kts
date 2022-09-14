@@ -1,8 +1,3 @@
-pluginManagement {
-    @Suppress("UnstableApiUsage")
-    includeBuild("build-logic")
-}
-
-rootProject.name = "javelin"
+rootProject.name = "javelin-parent"
 include(":javelin-core")
 include(":javelin-mindustry")

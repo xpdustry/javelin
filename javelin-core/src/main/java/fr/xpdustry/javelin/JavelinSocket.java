@@ -18,24 +18,37 @@
  */
 package fr.xpdustry.javelin;
 
+import java.io.*;
 import java.net.*;
+import java.util.function.*;
 import org.jetbrains.annotations.*;
 
-public interface JavelinConfig {
+public interface JavelinSocket {
 
-  @NotNull Mode getMode();
+  static JavelinSocket server(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+    return new JavelinServerSocket(port, workers, authenticator);
+  }
 
-  int getServerPort();
+  static JavelinSocket client(final URI uri, final @NotNull String username, final char@NotNull[] password, final int workers) {
+    return new JavelinClientSocket(uri, username, password, workers);
+  }
 
-  @NotNull String getClientUsername();
+  void start();
 
-  char[] getClientPassword();
+  void close();
 
-  @NotNull URI getClientServerUri();
+  <E extends JavelinEvent> void sendEvent(final @NotNull E event) throws IOException;
 
-  int getWorkerCount();
+  <E extends JavelinEvent> @NotNull Subscription subscribe(final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber);
 
-  enum Mode {
-    NONE, SERVER, CLIENT
+  @NotNull Status getStatus();
+
+  enum Status {
+    OPENING, OPEN, CLOSING, CLOSED
+  }
+
+  interface Subscription {
+
+    void unsubscribe();
   }
 }

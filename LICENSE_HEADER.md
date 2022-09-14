@@ -1,4 +1,4 @@
-Javelin, a cross server communication library for Mindustry.
+Javelin, a simple communication protocol for broadcasting events on a network.
 
 Copyright (C) 2022 Xpdustry
 

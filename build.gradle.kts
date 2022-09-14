@@ -1,4 +1,6 @@
-val snapshot = hasProperty("releaseProject") && property("releaseProject").toString().toBoolean()
+plugins {
+    id("javelin.parent-conventions")
+}
 group = "fr.xpdustry"
-version = "1.0.0" + if (snapshot) "" else "-SNAPSHOT"
-description = "A cross server communication library for Mindustry."
+version = "1.0.0" + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
+description = "A simple communication protocol for broadcasting events on a network."

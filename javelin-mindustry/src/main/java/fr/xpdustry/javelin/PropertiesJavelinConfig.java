@@ -1,5 +1,5 @@
 /*
- * Javelin, a cross server communication library for Mindustry.
+ * Javelin, a simple communication protocol for broadcasting events on a network.
  *
  * Copyright (C) 2022 Xpdustry
  *
@@ -25,27 +25,23 @@ import org.jetbrains.annotations.*;
 final class PropertiesJavelinConfig implements JavelinConfig {
 
   private static final String
-    SERVER_ENABLED_KEY =      "fr.xpdustry.javelin.server.enabled",
     SERVER_PORT_KEY =         "fr.xpdustry.javelin.server.port",
-    SERVER_WORKERS_KEY =      "fr.xpdustry.javelin.server.workers",
-    CLIENT_ENABLED_KEY =      "fr.xpdustry.javelin.client.enabled",
     CLIENT_USERNAME_KEY =     "fr.xpdustry.javelin.client.username",
     CLIENT_PASSWORD_KEY =     "fr.xpdustry.javelin.client.password",
     CLIENT_SERVER_URI_KEY =   "fr.xpdustry.javelin.client.address",
-    CLIENT_CONNECTION_KEY =   "fr.xpdustry.javelin.client.timeout";
+    MODE_KEY =                "fr.xpdustry.javelin.mode",
+    WORKERS_KEY =             "fr.xpdustry.javelin.workers";
 
   private static final Properties DEFAULTS = new Properties();
 
   static {
     DEFAULTS.putAll(Map.of(
-      SERVER_ENABLED_KEY,       "false",
       SERVER_PORT_KEY,          "8080",
-      SERVER_WORKERS_KEY,       "4",
-      CLIENT_ENABLED_KEY,       "false",
       CLIENT_USERNAME_KEY,      "unknown",
       CLIENT_PASSWORD_KEY,      "unknown",
       CLIENT_SERVER_URI_KEY,    "ws://localhost:8080",
-      CLIENT_CONNECTION_KEY,    "60"
+      MODE_KEY,                 "NONE",
+      WORKERS_KEY,              "4"
     ));
   }
 
@@ -61,23 +57,13 @@ final class PropertiesJavelinConfig implements JavelinConfig {
   }
 
   @Override
-  public boolean isServerEnabled() {
-    return Boolean.parseBoolean(properties.getProperty(SERVER_ENABLED_KEY));
+  public @NotNull Mode getMode() {
+    return Mode.valueOf(properties.getProperty(MODE_KEY));
   }
 
   @Override
   public int getServerPort() {
     return Integer.parseInt(properties.getProperty(SERVER_PORT_KEY));
-  }
-
-  @Override
-  public int getServerWorkerCount() {
-    return Integer.parseInt(properties.getProperty(SERVER_WORKERS_KEY));
-  }
-
-  @Override
-  public boolean isClientEnabled() {
-    return Boolean.parseBoolean(properties.getProperty(CLIENT_ENABLED_KEY));
   }
 
   @Override
@@ -96,7 +82,7 @@ final class PropertiesJavelinConfig implements JavelinConfig {
   }
 
   @Override
-  public int getClientConnectionLostTimeout() {
-    return Integer.parseInt(properties.getProperty(CLIENT_CONNECTION_KEY));
+  public int getWorkerCount() {
+    return Integer.parseInt(properties.getProperty(WORKERS_KEY));
   }
 }
