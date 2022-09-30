@@ -33,7 +33,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
   private final AtomicBoolean connecting = new AtomicBoolean();
   private final JavelinClientWebSocket socket;
 
-  JavelinClientSocket(final @NotNull URI serverUri, final @NotNull String username, final char@NotNull[] password, final int workers) {
+  JavelinClientSocket(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
     super(workers);
     this.socket = new JavelinClientWebSocket(serverUri, username, password);
   }
@@ -63,15 +63,15 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
       return Status.OPENING;
     }
     return switch (socket.getReadyState()) {
-      case OPEN ->      Status.OPEN;
-      case CLOSING ->   Status.CLOSING;
-      default ->        Status.CLOSED;
+      case OPEN -> Status.OPEN;
+      case CLOSING -> Status.CLOSING;
+      default -> Status.CLOSED;
     };
   }
 
   private final class JavelinClientWebSocket extends WebSocketClient {
 
-    private JavelinClientWebSocket(final URI uri, final @NotNull String username, final char@NotNull[] password) {
+    private JavelinClientWebSocket(final URI uri, final @NotNull String username, final char @NotNull [] password) {
       super(uri, Internal.getJavelinDraft());
       if (username.contains(":")) {
         throw new IllegalArgumentException("username contains a colon: " + username);

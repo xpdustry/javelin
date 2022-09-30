@@ -29,7 +29,7 @@ public interface JavelinSocket {
     return new JavelinServerSocket(port, workers, authenticator);
   }
 
-  static JavelinSocket client(final URI uri, final @NotNull String username, final char@NotNull[] password, final int workers) {
+  static JavelinSocket client(final URI uri, final @NotNull String username, final char @NotNull [] password, final int workers) {
     return new JavelinClientSocket(uri, username, password, workers);
   }
 

@@ -23,7 +23,6 @@ import com.esotericsoftware.kryo.kryo5.io.*;
 import com.esotericsoftware.kryo.kryo5.objenesis.strategy.*;
 import java.io.*;
 import java.nio.*;
-import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import java.util.function.*;
@@ -36,7 +35,6 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   protected final Logger logger = LoggerFactory.getLogger(getClass());
   private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
   private final Kryo kryo = new Kryo();
-  private final Queue<JavelinEvent> queue = new ArrayDeque<>();
   private final AtomicInteger idGen = new AtomicInteger();
   private final ExecutorService executor;
 
@@ -56,7 +54,6 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
 
   @Override
   public <E extends JavelinEvent> void sendEvent(final @NotNull E event) throws IOException {
-    queue.add(event);
     if (this.getStatus() != Status.OPEN) {
       throw new IOException("The socket is not open.");
     }
@@ -84,8 +81,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
       if (registration == null) {
         return;
       }
-      @SuppressWarnings("unchecked")
-      final var clazz = (Class<? extends JavelinEvent>) registration.getType();
+      @SuppressWarnings("unchecked") final var clazz = (Class<? extends JavelinEvent>) registration.getType();
       if (bus.subscribed(clazz)) {
         executor.execute(() -> {
           final var event = kryo.readObject(input, clazz);

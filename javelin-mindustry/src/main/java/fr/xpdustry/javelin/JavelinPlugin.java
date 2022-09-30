@@ -25,8 +25,8 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import mindustry.mod.*;
-import org.jetbrains.annotations.*;
 import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.*;
 
 public final class JavelinPlugin extends Plugin {
 
