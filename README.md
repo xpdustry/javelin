@@ -2,57 +2,76 @@
 
 [![Build status](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml)
 [![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://repo.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/javelin?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
+[![Xpdustry latest](https://maven.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/javelin?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
 
 ## Description
 
-A simple and fast communication system for Mindustry servers, enabling powerful features such as
-global chats, synced moderation, discord integrations, etc...
+A simple and fast communication protocol for your internal network or Mindustry servers,
+enabling powerful features such as global chats, synced moderation, discord integrations, etc...
 
 ## Usage
 
-### First set up
+### Runtime
 
-1. Install the plugin on all the servers you wish to link and start them, it will create the
+This plugin is compatible with V6 and V7.
+
+> If you run on v135 or lower, you will need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin)
+for the dependency resolution.
+
+### Setup
+
+This tutorial is aimed for non-advanced users looking to create their server network very easily :
+
+1. Install the plugin in all the servers you wish to link and start them, it will create the
    necessary config files in the `./javelin` directory.
 
-2. For the Javelin server, you can create one in one of your mindustry servers by setting 
-   `fr.xpdustry.javelin.server.enabled` to true in the `./javelin/config.properties` config file.
-   Also set `fr.xpdustry.javelin.server.port` for the port.
+2. Choose a Mindustry server that will host the main Javelin server.
 
-3. Once the server is set up, register your users with the `javelin-server-user-add` command.
-   They are stored in a binary file (`./javelin/users.bin`) by default. Passwords are encrypted
-   so no worries about security in most cases.
+   > I suggest you to choose your hub server or the one with the most RAM and CPU power.
 
-4. For each Mindustry server that need to connect to Javelin, in the config file, set :
+   Go in the config file of the said server in `./javelin/config.properties` and edit
+   the following properties :
+
+   - `fr.xpdustry.javelin.socket.mode` to `SERVER`.
+
+   - `fr.xpdustry.javelin.server.port` : The port of your Javelin server (optional, default is `8080`).
+
+   - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and outgoing events (optional, **don't exceed your CPU core count**).
    
-   - `fr.xpdustry.javelin.client.enabled` to true.
+   Then in the server console, add users with the command `javelin-user-add <username> <password>`.
 
-   - `fr.xpdustry.javelin.client.username` with its registered username.
+   > Users are saved in a binary file at `./javelin/users.bin.gz`, passwords are salted and hashed.
 
-   - `fr.xpdustry.javelin.client.password` with its registered password.
+3. Once it's ready, restart your Mindustry server and your Javelin server should start along it.
 
-   - `fr.xpdustry.javelin.client.address` with the server address.
+4. Now, for each other server where Javelin is installed, edit the following properties in 
+   the config file at `./javelin/config.properties` :
 
-5. Now, your Javelin network should be ready, enjoy.
+   - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
 
-   > If you need any help, We'll be happy to help you in the **#support** channel of
+   - `fr.xpdustry.javelin.client.username` to the username you assigned to this server.
+
+   - `fr.xpdustry.javelin.client.password` to the password you assigned to this server.
+
+   - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and outgoing events (optional, **don't exceed your CPU core count**).
+ 
+5. Restart all servers and enjoy the wonders of networking.
+
+   > Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
    the [Xpdustry Discord server](https://discord.xpdustry.fr).
-   
-### Javelin API
 
-It's very simple.
+### API
+
+#### Java
 
 First, add this in your `build.gradle` :
 
 ```gradle
 repositories {
-    // Replace with "https://repo.xpdustry.fr/snapshots" if you want to use the snapshots
-    maven { url = uri("https://repo.xpdustry.fr/releases") }
+    maven { url = uri("https://maven.xpdustry.fr/releases") }
 }
 
 dependencies {
-    // Add "-SNAPSHOT" after the version if you are using the snapshot repository
     compileOnly("fr.xpdustry:javelin-mindustry:1.0.0" )
 }
 ```
@@ -67,52 +86,72 @@ Then, update your `plugin.json` file with :
 }
 ```
 
-Finally, in your code, get the client with `Javelin.getClient()`, check if it's connected
-with `isConnected()` and enjoy.
+In your code, get the socket instance with `Javelin.getJavelinSocket()` (**do not call it before `init`**).
 
-You can send or broadcast any message you like, but .
+Now, you can subscribe to the incoming events with `subscribe(event-class, subscriber)` and send events with `sendEvent(event)`.
 
-Here is an example class that can synchronize ban events :
+Here is an example Plugin that can synchronize ban events :
 
 ```java
-public final class BanSynchronizer implements MessageReceiver<String> {
+public final class BanSynchronizer extends Plugin {
 
-    private static final MessageContext<String> CONTEXT = new MessageContext<>("xpdustry-moderation", "ban-sync", String.class);
+  @Override
+  public void init() {
+    // Get socket instance
+    final JavelinSocket socket = JavelinPlugin.getJavelinSocket();
 
-    public BanSynchronizer() {
-        // Binds this object for receiving incoming messages from other servers.
-        JavelinPlugin.getClient().bindReceiver(CONTEXT, this);
+    Events.on(EventType.PlayerBanEvent.class, e -> {
+      // If the socket is open, send the ban
+      if (socket.getStatus() == JavelinSocket.Status.OPEN) {
+        socket.sendEvent(new JavelinBanEvent(e.player.uuid()));
+      }
+    });
 
-        Events.on(EventType.PlayerBanEvent.class, e -> {
-            final JavelinClient client = JavelinPlugin.getClient();
-            try {
-                if (client.isConnected()) {
-                    client.broadcastMessage(CONTEXT, e.uuid);
-                }
-            } catch (final IOException ex) {
-                Log.err("An unexpected exception occurred while broadcasting a ban.", ex);
-            }
-        });
+    socket.subscribe(JavelinBanEvent.class, e -> {
+      // Ban player
+      Vars.netServer.admins.banPlayer(e.getUuid());
+      // Kick player if connected
+      final Player player = Groups.player.find(p -> p.uuid().equals(e.getUuid()));
+      if (player != null) {
+        player.kick(Packets.KickReason.banned);
+      }
+    });
+  }
+
+  public static final class JavelinBanEvent implements JavelinEvent {
+
+    private final String uuid;
+
+    public JavelinBanEvent(final String uuid) {
+      this.uuid = uuid;
     }
 
-    @Override
-    public void onMessageReceive(final @NotNull String uuid, final @Nullable String sender) {
-        Vars.netServer.admins.banPlayer(uuid);
-        final Player player = Groups.player.find(p -> p.uuid().equals(uuid));
-        if (player != null) player.kick(Packets.KickReason.banned);
+    public String getUuid() {
+      return uuid;
     }
+  }
 }
 ```
 
-### Tips
+#### JavaScript
 
-- In the client config, if you set `fr.xpdustry.javelin.client.timeout` to 0, your client will
-  always reconnect to your Javelin server, even if it has been down for a long time.
+You won't be able to define new `JavelinEvent` types, but you can do everything else.
+Just don't forget to add the following in your `mod.json`.
 
-- You can explicitly reconnect a Javelin client with the `javelin-client-reconnect` command.
+```json
+{
+  "dependencies": [
+    "xpdustry-javelin"
+  ]
+}
+```
+
+## Tips
+
+- The socket isn't reusable, **do not close it yourself** !!!
 
 - You can add `wss` support on javelin with a reverse proxy like nginx.
-  Example let's encrypt / certbot :
+  Example with let's encrypt / certbot :
 
   ```nginx
   # This is required to upgrade the websocket connection
@@ -170,17 +209,6 @@ public final class BanSynchronizer implements MessageReceiver<String> {
 
 ## Testing
 
-- `./gradlew runMindustryClient`: Run Mindustry in desktop with the plugin.
+- `./gradlew runMindustryClient`: Run the plugin in Mindustry desktop.
 
-- `./gradlew runMindustryServer`: Run Mindustry in a server with the plugin.
-
-## Running
-
-This plugin is compatible with V6 and V7, but it requires the following dependencies :
-
-- [xpdustry-distributor-core](https://github.com/Xpdustry/Distributor)
-
-- [xpdustry-kotlin-stdlib](https://github.com/Xpdustry/KotlinRuntimePlugin)
-
-If you run on v135 or lower, you will need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin)
-for the dependency resolution.
+- `./gradlew runMindustryServer`: Run the plugin in Mindustry server.

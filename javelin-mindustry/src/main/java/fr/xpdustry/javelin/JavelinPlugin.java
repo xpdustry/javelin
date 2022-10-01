@@ -25,7 +25,6 @@ import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
 import mindustry.mod.*;
-import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.*;
 
 public final class JavelinPlugin extends Plugin {
@@ -36,7 +35,7 @@ public final class JavelinPlugin extends Plugin {
 
   private static UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
   private static JavelinConfig config;
-  private static @Nullable JavelinSocket socket = null;
+  private static @UnknownNullability JavelinSocket socket = null;
 
   public static @NotNull UserAuthenticator getUserAuthenticator() {
     return authenticator;
@@ -50,7 +49,7 @@ public final class JavelinPlugin extends Plugin {
     return config;
   }
 
-  public static @Nullable JavelinSocket getJavelinSocket() {
+  public static @NotNull JavelinSocket getJavelinSocket() {
     return socket;
   }
 
@@ -156,12 +155,23 @@ public final class JavelinPlugin extends Plugin {
 
     @Override
     public void init() {
-      socket.start();
+      Log.info("Opening javelin socket");
+      socket.start().thenRunAsync(() -> Events.fire(new JavelinSocketStartEvent()), Core.app::post);
     }
 
     @Override
     public void dispose() {
-      socket.close();
+      Log.info("Closing javelin socket");
+      Events.fire(new JavelinSocketCloseEvent());
+      socket.close().join();
     }
+  }
+
+  public static final class JavelinSocketStartEvent {
+
+  }
+
+  public static final class JavelinSocketCloseEvent {
+
   }
 }

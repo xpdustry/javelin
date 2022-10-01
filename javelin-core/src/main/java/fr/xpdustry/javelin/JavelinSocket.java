@@ -18,26 +18,26 @@
  */
 package fr.xpdustry.javelin;
 
-import java.io.*;
 import java.net.*;
+import java.util.concurrent.*;
 import java.util.function.*;
 import org.jetbrains.annotations.*;
 
 public interface JavelinSocket {
 
-  static JavelinSocket server(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+  static @NotNull JavelinSocket server(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
     return new JavelinServerSocket(port, workers, authenticator);
   }
 
-  static JavelinSocket client(final URI uri, final @NotNull String username, final char @NotNull [] password, final int workers) {
+  static @NotNull JavelinSocket client(final URI uri, final @NotNull String username, final char @NotNull [] password, final int workers) {
     return new JavelinClientSocket(uri, username, password, workers);
   }
 
-  void start();
+  @NotNull CompletableFuture<Void> start();
 
-  void close();
+  @NotNull CompletableFuture<Void> close();
 
-  <E extends JavelinEvent> void sendEvent(final @NotNull E event) throws IOException;
+  <E extends JavelinEvent> @NotNull CompletableFuture<Void> sendEvent(final @NotNull E event);
 
   <E extends JavelinEvent> @NotNull Subscription subscribe(final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber);
 

@@ -21,16 +21,25 @@ package fr.xpdustry.javelin;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
-public final class TestJavelinAuthenticator implements JavelinAuthenticator {
+final class TestEvent implements JavelinEvent {
 
-  private final Map<String, char[]> users = new HashMap<>();
+  private final String payload;
 
-  @Override
-  public boolean authenticate(final @NotNull String username, char @NotNull [] password) {
-    return users.containsKey(username) && Arrays.equals(users.get(username), password);
+  public TestEvent(final String payload) {
+    this.payload = payload;
   }
 
-  public void addUser(final String username, final String password) {
-    users.put(username, password.toCharArray());
+  public String getPayload() {
+    return payload;
+  }
+
+  @Override
+  public boolean equals(final @Nullable Object o) {
+    return this == o || (o instanceof TestEvent event && Objects.equals(payload, event.payload));
+  }
+
+  @Override
+  public int hashCode() {
+    return payload.hashCode();
   }
 }

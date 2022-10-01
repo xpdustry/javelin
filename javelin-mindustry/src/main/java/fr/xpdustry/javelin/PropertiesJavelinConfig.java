@@ -29,20 +29,22 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     CLIENT_USERNAME_KEY = "fr.xpdustry.javelin.client.username",
     CLIENT_PASSWORD_KEY = "fr.xpdustry.javelin.client.password",
     CLIENT_SERVER_URI_KEY = "fr.xpdustry.javelin.client.address",
-    MODE_KEY = "fr.xpdustry.javelin.mode",
-    WORKERS_KEY = "fr.xpdustry.javelin.workers";
+    MODE_KEY = "fr.xpdustry.javelin.socket.mode",
+    WORKERS_KEY = "fr.xpdustry.javelin.socket.workers";
 
   private static final Properties DEFAULTS = new Properties();
 
   static {
-    DEFAULTS.putAll(Map.of(
-      SERVER_PORT_KEY, "8080",
-      CLIENT_USERNAME_KEY, "unknown",
-      CLIENT_PASSWORD_KEY, "unknown",
-      CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
-      MODE_KEY, "NONE",
-      WORKERS_KEY, "4"
-    ));
+    DEFAULTS.putAll(
+      Map.of(
+        SERVER_PORT_KEY, "8080",
+        CLIENT_USERNAME_KEY, "unknown",
+        CLIENT_PASSWORD_KEY, "unknown",
+        CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
+        MODE_KEY, "NONE",
+        WORKERS_KEY, "4"
+      )
+    );
   }
 
   private final Properties properties;

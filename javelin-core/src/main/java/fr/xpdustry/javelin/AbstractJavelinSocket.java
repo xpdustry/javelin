@@ -32,7 +32,6 @@ import org.slf4j.*;
 
 abstract class AbstractJavelinSocket implements JavelinSocket {
 
-  protected final Logger logger = LoggerFactory.getLogger(getClass());
   private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
   private final Kryo kryo = new Kryo();
   private final AtomicInteger idGen = new AtomicInteger();
@@ -41,8 +40,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   protected AbstractJavelinSocket(final int workers) {
     this.executor = Executors.newFixedThreadPool(workers, runnable -> {
       final var worker = new Thread(runnable);
-      worker.setDaemon(true);
-      worker.setName("JavelinSocketWorker-" + idGen.getAndIncrement());
+      worker.setName("JavelinSocketWorker - " + idGen.getAndIncrement());
       return worker;
     });
 
@@ -53,17 +51,23 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   }
 
   @Override
-  public <E extends JavelinEvent> void sendEvent(final @NotNull E event) throws IOException {
+  public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final @NotNull E event) {
+    final var future = new CompletableFuture<Void>();
     if (this.getStatus() != Status.OPEN) {
-      throw new IOException("The socket is not open.");
+      future.completeExceptionally(new IOException("The socket is not open."));
+    } else {
+      executor.execute(() -> {
+        try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
+          kryo.writeClass(output, event.getClass());
+          kryo.writeObject(output, event);
+          onEventSend(output.getByteBuffer());
+          future.complete(null);
+        } catch (final KryoBufferOverflowException e) {
+          future.completeExceptionally(new IOException("The event is too large.", e));
+        }
+      });
     }
-    try (final var output = new ByteBufferOutput(Internal.MAX_EVENT_SIZE)) {
-      kryo.writeClass(output, event.getClass());
-      kryo.writeObject(output, event);
-      onEventSend(output.getByteBuffer());
-    } catch (final KryoBufferOverflowException e) {
-      throw new IOException("The event is too large.", e);
-    }
+    return future;
   }
 
   @Override
@@ -71,11 +75,16 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     return bus.subscribe(event, subscriber::accept)::unsubscribe;
   }
 
+  @Override
+  public @NotNull CompletableFuture<Void> close() {
+    return CompletableFuture.runAsync(() -> {
+      if (!executor.isShutdown()) executor.shutdown();
+    });
+  }
+
   protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
 
   protected void onEventReceive(final @NotNull ByteBuffer buffer) {
-    final CompletableFuture<Void> future = new CompletableFuture<>();
-    future.orTimeout(10, TimeUnit.MILLISECONDS);
     try (final var input = new ByteBufferInput(buffer)) {
       final var registration = kryo.readClass(input);
       if (registration == null) {
@@ -83,11 +92,14 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
       }
       @SuppressWarnings("unchecked") final var clazz = (Class<? extends JavelinEvent>) registration.getType();
       if (bus.subscribed(clazz)) {
-        executor.execute(() -> {
-          final var event = kryo.readObject(input, clazz);
-          bus.post(event).exceptions().forEach((subscriber, throwable) -> logger.error("An exception occurred while handling " + event, throwable));
-        });
+        final var event = kryo.readObject(input, clazz);
+        executor.execute(() -> bus.post(event)
+          .exceptions()
+          .forEach((s, t) -> getLogger().error("An exception occurred while handling an event in " + s, t))
+        );
       }
     }
   }
+
+  protected abstract Logger getLogger();
 }

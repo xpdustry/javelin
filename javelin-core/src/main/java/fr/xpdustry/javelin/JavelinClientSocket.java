@@ -18,17 +18,22 @@
  */
 package fr.xpdustry.javelin;
 
+import java.io.*;
 import java.net.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.java_websocket.client.*;
 import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 final class JavelinClientSocket extends AbstractJavelinSocket {
+
+  private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
 
   private final AtomicBoolean connecting = new AtomicBoolean();
   private final JavelinClientWebSocket socket;
@@ -39,17 +44,32 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
   }
 
   @Override
-  public void start() {
+  public @NotNull CompletableFuture<Void> start() {
     if (getStatus() == Status.CLOSED) {
-      socket.connect();
+      return CompletableFuture.runAsync(() -> {
+        try {
+          if (!socket.connectBlocking()) {
+            throw new IOException("Failed to connect.");
+          }
+        } catch (final InterruptedException | IOException e) {
+          throw new CompletionException(e);
+        }
+      });
     }
+    return CompletableFuture.completedFuture(null);
   }
 
   @Override
-  public void close() {
-    if (getStatus() != Status.OPEN) {
-      socket.close();
-    }
+  public @NotNull CompletableFuture<Void> close() {
+    return CompletableFuture.runAsync(() -> {
+      if (getStatus() != Status.OPEN) {
+        try {
+          socket.closeBlocking();
+        } catch (final InterruptedException e) {
+          throw new CompletionException(e);
+        }
+      }
+    }).thenCompose(v -> super.close());
   }
 
   @Override
@@ -67,6 +87,11 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
       case CLOSING -> Status.CLOSING;
       default -> Status.CLOSED;
     };
+  }
+
+  @Override
+  protected Logger getLogger() {
+    return logger;
   }
 
   private final class JavelinClientWebSocket extends WebSocketClient {

@@ -22,6 +22,7 @@ import java.net.*;
 import java.nio.*;
 import java.nio.charset.*;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
 import org.java_websocket.*;
 import org.java_websocket.drafts.*;
@@ -30,8 +31,11 @@ import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
 import org.java_websocket.server.*;
 import org.jetbrains.annotations.*;
+import org.slf4j.*;
 
 final class JavelinServerSocket extends AbstractJavelinSocket {
+
+  private static final Logger logger = LoggerFactory.getLogger(JavelinServerSocket.class);
 
   private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
   private final JavelinServerWebSocket socket;
@@ -42,24 +46,29 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
   }
 
   @Override
-  public void start() {
-    if (status.get() == Status.CLOSED) {
-      socket.start();
-      status.set(Status.OPEN);
-    }
+  public @NotNull CompletableFuture<Void> start() {
+    return CompletableFuture.runAsync(() -> {
+      if (status.get() == Status.CLOSED) {
+        socket.start();
+        status.set(Status.OPEN);
+      }
+    });
   }
 
   @Override
-  public void close() {
-    if (status.get() == Status.OPEN) {
-      status.set(Status.CLOSING);
-      try {
-        socket.stop();
-      } catch (final InterruptedException ignored) {
-      } finally {
-        status.set(Status.CLOSED);
+  public @NotNull CompletableFuture<Void> close() {
+    return CompletableFuture.runAsync(() -> {
+      if (status.get() == Status.OPEN) {
+        status.set(Status.CLOSING);
+        try {
+          socket.stop();
+        } catch (final InterruptedException e) {
+          throw new CompletionException(e);
+        } finally {
+          status.set(Status.CLOSED);
+        }
       }
-    }
+    }).thenCompose(v -> super.close());
   }
 
   @Override
@@ -70,6 +79,11 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
   @Override
   public @NotNull Status getStatus() {
     return status.get();
+  }
+
+  @Override
+  protected Logger getLogger() {
+    return logger;
   }
 
   private final class JavelinServerWebSocket extends WebSocketServer {
