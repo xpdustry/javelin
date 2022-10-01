@@ -9,16 +9,15 @@
 A simple and fast communication protocol for your internal network or Mindustry servers,
 enabling powerful features such as global chats, synced moderation, discord integrations, etc...
 
-## Usage
-
-### Runtime
+## Runtime
 
 This plugin is compatible with V6 and V7.
 
-> If you run on v135 or lower, you will need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin)
-for the dependency resolution.
+> If you run on v135 or lower, you will
+> need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin)
+> for the dependency resolution.
 
-### Setup
+## Setup
 
 This tutorial is aimed for non-advanced users looking to create their server network very easily :
 
@@ -32,41 +31,44 @@ This tutorial is aimed for non-advanced users looking to create their server net
    Go in the config file of the said server in `./javelin/config.properties` and edit
    the following properties :
 
-   - `fr.xpdustry.javelin.socket.mode` to `SERVER`.
+    - `fr.xpdustry.javelin.socket.mode` to `SERVER`.
 
-   - `fr.xpdustry.javelin.server.port` : The port of your Javelin server (optional, default is `8080`).
+    - `fr.xpdustry.javelin.server.port` : The port of your Javelin server (optional, default
+      is `8080`).
 
-   - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and outgoing events (optional, **don't exceed your CPU core count**).
-   
+    - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
+      outgoing events (optional, **don't exceed your CPU core count**).
+
    Then in the server console, add users with the command `javelin-user-add <username> <password>`.
 
    > Users are saved in a binary file at `./javelin/users.bin.gz`, passwords are salted and hashed.
 
 3. Once it's ready, restart your Mindustry server and your Javelin server should start along it.
 
-4. Now, for each other server where Javelin is installed, edit the following properties in 
+4. Now, for each other server where Javelin is installed, edit the following properties in
    the config file at `./javelin/config.properties` :
 
-   - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
+    - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
 
-   - `fr.xpdustry.javelin.client.username` to the username you assigned to this server.
+    - `fr.xpdustry.javelin.client.username` to the username you assigned to this server.
 
-   - `fr.xpdustry.javelin.client.password` to the password you assigned to this server.
+    - `fr.xpdustry.javelin.client.password` to the password you assigned to this server.
 
-   - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and outgoing events (optional, **don't exceed your CPU core count**).
- 
+    - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
+      outgoing events (optional, **don't exceed your CPU core count**).
+
 5. Restart all servers and enjoy the wonders of networking.
 
    > Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
    the [Xpdustry Discord server](https://discord.xpdustry.fr).
 
-### API
+## Usage
 
-#### Java
+### Java
 
 First, add this in your `build.gradle` :
 
-```gradle
+```groovy
 repositories {
     maven { url = uri("https://maven.xpdustry.fr/releases") }
 }
@@ -86,9 +88,11 @@ Then, update your `plugin.json` file with :
 }
 ```
 
-In your code, get the socket instance with `Javelin.getJavelinSocket()` (**do not call it before `init`**).
+In your code, get the socket instance with `Javelin.getJavelinSocket()` (**do not call it
+before `init`**).
 
-Now, you can subscribe to the incoming events with `subscribe(event-class, subscriber)` and send events with `sendEvent(event)`.
+Now, you can subscribe to the incoming events with `subscribe(event-class, subscriber)` and send
+events with `sendEvent(event)`.
 
 Here is an example Plugin that can synchronize ban events :
 
@@ -133,10 +137,10 @@ public final class BanSynchronizer extends Plugin {
 }
 ```
 
-#### JavaScript
+### JavaScript
 
-You won't be able to define new `JavelinEvent` types, but you can do everything else.
-Just don't forget to add the following in your `mod.json`.
+You won't be able to define new `JavelinEvent` types like `JavelinBanEvent`,
+but you can do everything else. Just don't forget to add the following in your `mod.json`.
 
 ```json
 {
@@ -161,22 +165,21 @@ Just don't forget to add the following in your `mod.json`.
   }
 
   upstream javelin {
-      # I use pterodactyl pannel so I use the node url "n1.xpdustry.fr", if you don't, use 127.0.0.1 or localhost
-      # 12000 is the port of my javelin server
-      server n1.xpdustry.fr:12000;
+      # The adress and port of your javelin server
+      server adress:port;
       keepalive 64;
   }
 
   server {
-      # Don't forget to change that
-      server_name javelin.xpdustry.fr;
+      # The name of your server (example: javelin.xpdustry.fr)
+      server_name javelin.domain.fr;
 
       listen 443 ssl;
       listen [::]:443 ssl;
 
       # Don't forget to change that
-      access_log /var/log/nginx/javelin.xpdustry.fr-access.log;
-      error_log /var/log/nginx/javelin.xpdustry.fr-error.log;
+      access_log /var/log/nginx/javelin.domain.fr-access.log;
+      error_log /var/log/nginx/javelin.domain.fr-error.log;
 
       location / {
           proxy_pass         http://javelin;
@@ -191,14 +194,14 @@ Just don't forget to add the following in your `mod.json`.
 
       # This part is generated by certbot, so replace it with your own
       # Managed by Certbot
-      ssl_certificate /etc/letsencrypt/live/xpdustry.fr/fullchain.pem; # managed by Certbot
-      ssl_certificate_key /etc/letsencrypt/live/xpdustry.fr/privkey.pem; # managed by Certbot
+      ssl_certificate /etc/letsencrypt/live/javelin.domain.fr/fullchain.pem; # managed by Certbot
+      ssl_certificate_key /etc/letsencrypt/live/javelin.domain.fr/privkey.pem; # managed by Certbot
       include /etc/letsencrypt/options-ssl-nginx.conf;
       ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
   }
   ```
 
-  Now, your javelin server is accessible with `wss://javelin.yourdomain.something/`.
+  Now, your javelin server is accessible with `wss://javelin.domain.fr/`.
 
 ## Building
 

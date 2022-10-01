@@ -42,7 +42,7 @@ final class PropertiesJavelinConfig implements JavelinConfig {
         CLIENT_PASSWORD_KEY, "unknown",
         CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
         MODE_KEY, "NONE",
-        WORKERS_KEY, "4"
+        WORKERS_KEY, "1"
       )
     );
   }
