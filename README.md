@@ -157,7 +157,10 @@ but you can do everything else. Just don't forget to add the following in your `
 
 ## Tips
 
-- The socket isn't reusable, **do not close it yourself** !!!
+- The socket isn't reusable, **do not start nor close it yourself** !!!
+
+- Javelin does not support Arc collections such as `Seq`, `ObjectMap`, ... (it may
+  still work, but it will be terribly optimized).
 
 - You can add `wss` support on javelin with a reverse proxy like nginx.
   Example with let's encrypt / certbot :
