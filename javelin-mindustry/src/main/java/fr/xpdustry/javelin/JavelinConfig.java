@@ -29,7 +29,7 @@ public interface JavelinConfig {
 
   @NotNull String getClientUsername();
 
-  char[] getClientPassword();
+  char @NotNull [] getClientPassword();
 
   @NotNull URI getClientServerUri();
 

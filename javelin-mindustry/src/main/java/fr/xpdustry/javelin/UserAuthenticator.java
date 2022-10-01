@@ -23,7 +23,7 @@ import org.jetbrains.annotations.*;
 
 public interface UserAuthenticator extends JavelinAuthenticator {
 
-  void saveUser(final @NotNull String username, final char[] password);
+  void saveUser(final @NotNull String username, final char @NotNull [] password);
 
   boolean existsUser(final @NotNull String username);
 

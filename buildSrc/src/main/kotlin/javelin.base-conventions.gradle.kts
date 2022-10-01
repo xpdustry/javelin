@@ -1,7 +1,11 @@
+import net.ltgt.gradle.errorprone.errorprone
+import net.ltgt.gradle.errorprone.CheckSeverity
+
 plugins {
     id("net.kyori.indra")
     id("net.kyori.indra.publishing")
     id("net.kyori.indra.license-header")
+    id("net.ltgt.errorprone")
 }
 
 repositories {
@@ -21,6 +25,21 @@ dependencies {
     val jetbrains = "23.0.0"
     compileOnly("org.jetbrains:annotations:$jetbrains")
     testCompileOnly("org.jetbrains:annotations:$jetbrains")
+
+    // Static analysis
+    annotationProcessor("com.uber.nullaway:nullaway:0.9.7")
+    errorprone("com.google.errorprone:error_prone_core:2.13.1")
+}
+
+tasks.withType(JavaCompile::class.java).configureEach {
+    options.errorprone {
+        disableWarningsInGeneratedCode.set(true)
+        disable("MissingSummary", "FutureReturnValueIgnored")
+        if (!name.contains("test", true)) {
+            check("NullAway", CheckSeverity.ERROR)
+            option("NullAway:AnnotatedPackages", "fr.xpdustry.javelin")
+        }
+    }
 }
 
 license {

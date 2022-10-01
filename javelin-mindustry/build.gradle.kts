@@ -13,8 +13,8 @@ tasks.shadowJar {
         exclude("org.slf4j")
     }
     val target = "fr.xpdustry.nucleus.shadow"
+    relocate("org.java_websocket", "$target.java_websocket")
     relocate("net.kyori.event", "$target.event")
     relocate("org.slf4j", "$target.slf4j")
-    relocate("org.java_websocket", "$target.java_websocket")
     relocate("com.esotericsoftware.kryo", "$target.kryo")
 }

@@ -67,7 +67,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
   }
 
   @Override
-  public void saveUser(final @NotNull String username, final char[] password) {
+  public void saveUser(final @NotNull String username, final char @NotNull [] password) {
     final var salt = generateSalt();
     users.put(username, getEncryptedPassword(password, salt));
     save();

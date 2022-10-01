@@ -50,6 +50,9 @@ This tutorial is aimed for non-advanced users looking to create their server net
 
     - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
 
+    - `fr.xpdustry.javelin.client.address` to the main javelin server address such
+      as `ws://xpdustry.fr:8080`.
+
     - `fr.xpdustry.javelin.client.username` to the username you assigned to this server.
 
     - `fr.xpdustry.javelin.client.password` to the password you assigned to this server.
@@ -74,7 +77,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("fr.xpdustry:javelin-mindustry:1.0.0" )
+    compileOnly("fr.xpdustry:javelin-mindustry:1.0.0")
 }
 ```
 

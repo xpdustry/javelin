@@ -20,7 +20,6 @@ package fr.xpdustry.javelin;
 
 import arc.*;
 import arc.util.*;
-import fr.xpdustry.javelin.JavelinConfig.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
@@ -35,8 +34,9 @@ public final class JavelinPlugin extends Plugin {
   private static final File USERS_FILE = new File(DIRECTORY, "users.bin.gz");
 
   private static UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
+  @SuppressWarnings("NullAway.Init")
   private static JavelinConfig config;
-  private static @UnknownNullability JavelinSocket socket = null;
+  private static JavelinSocket socket = JavelinSocket.noop();
 
   public static @NotNull UserAuthenticator getUserAuthenticator() {
     return authenticator;
@@ -61,13 +61,13 @@ public final class JavelinPlugin extends Plugin {
 
     config = readConfig();
 
-    if (config.getMode() == Mode.SERVER) {
+    if (config.getMode() == JavelinConfig.Mode.SERVER) {
       socket = JavelinSocket.server(
         config.getServerPort(),
         config.getWorkerCount(),
         authenticator
       );
-    } else if (config.getMode() == Mode.CLIENT) {
+    } else if (config.getMode() == JavelinConfig.Mode.CLIENT) {
       socket = JavelinSocket.client(
         config.getClientServerUri(),
         config.getClientUsername(),
@@ -76,9 +76,7 @@ public final class JavelinPlugin extends Plugin {
       );
     }
 
-    if (socket != null) {
-      Core.app.addListener(new JavelinApplicationListener(socket));
-    }
+    Core.app.addListener(new JavelinApplicationListener(socket));
   }
 
   @Override
@@ -120,11 +118,7 @@ public final class JavelinPlugin extends Plugin {
     });
 
     handler.register("javelin-status", "Gets the status of the javelin socket.", args -> {
-      if (socket != null) {
-        Log.info("The javelin socket is currently @.", socket.getStatus());
-      } else {
-        Log.info("The javelin socket is not active.");
-      }
+      Log.info("The javelin socket is currently @.", socket.getStatus().name().toLowerCase(Locale.ROOT));
     });
   }
 
@@ -150,7 +144,7 @@ public final class JavelinPlugin extends Plugin {
 
     private final JavelinSocket socket;
 
-    private JavelinApplicationListener(final JavelinSocket socket) {
+    private JavelinApplicationListener(final @NotNull JavelinSocket socket) {
       this.socket = socket;
     }
 

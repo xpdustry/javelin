@@ -29,8 +29,12 @@ public interface JavelinSocket {
     return new JavelinServerSocket(port, workers, authenticator);
   }
 
-  static @NotNull JavelinSocket client(final URI uri, final @NotNull String username, final char @NotNull [] password, final int workers) {
-    return new JavelinClientSocket(uri, username, password, workers);
+  static @NotNull JavelinSocket client(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
+    return new JavelinClientSocket(serverUri, username, password, workers);
+  }
+
+  static @NotNull JavelinSocket noop() {
+    return NoopJavelinSocket.INSTANCE;
   }
 
   @NotNull CompletableFuture<Void> start();

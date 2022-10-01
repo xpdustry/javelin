@@ -74,7 +74,7 @@ final class PropertiesJavelinConfig implements JavelinConfig {
   }
 
   @Override
-  public char[] getClientPassword() {
+  public char @NotNull [] getClientPassword() {
     return properties.getProperty(CLIENT_PASSWORD_KEY).toCharArray();
   }
 

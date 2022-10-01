@@ -76,6 +76,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     socket.broadcast(buffer);
   }
 
+  @SuppressWarnings("NullAway") // dafuq ?
   @Override
   public @NotNull Status getStatus() {
     return status.get();
