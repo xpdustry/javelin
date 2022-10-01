@@ -2,13 +2,6 @@ plugins {
     id("javelin.base-conventions")
 }
 
-repositories {
-    maven("https://s01.oss.sonatype.org/content/repositories/snapshots/") {
-        name = "sonatype-oss-snapshots1"
-        mavenContent { snapshotsOnly() }
-    }
-}
-
 dependencies {
     implementation("net.kyori:event-api:5.0.0-SNAPSHOT")
     implementation("org.java-websocket:Java-WebSocket:1.5.3")
