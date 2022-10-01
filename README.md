@@ -2,7 +2,7 @@
 
 [![Build status](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml)
 [![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://maven.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/javelin?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
+[![Xpdustry latest](https://maven.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/javelin-core?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
 
 ## Description
 
@@ -139,6 +139,8 @@ public final class BanSynchronizer extends Plugin {
   }
 }
 ```
+
+More info in the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-core/latest).
 
 ### JavaScript
 
