@@ -100,18 +100,18 @@ public final class BanSynchronizer extends Plugin {
     // Get socket instance
     final JavelinSocket socket = JavelinPlugin.getJavelinSocket();
 
-    Events.on(EventType.PlayerBanEvent.class, e -> {
+    Events.on(EventType.PlayerIpBanEvent.class, e -> {
       // If the socket is open, send the ban
       if (socket.getStatus() == JavelinSocket.Status.OPEN) {
-        socket.sendEvent(new JavelinBanEvent(e.player.uuid()));
+        socket.sendEvent(new JavelinBanEvent(e.ip));
       }
     });
 
     socket.subscribe(JavelinBanEvent.class, e -> {
       // Ban player
-      Vars.netServer.admins.banPlayer(e.getUuid());
+      Vars.netServer.admins.banPlayerIP(e.getIP());
       // Kick player if connected
-      final Player player = Groups.player.find(p -> p.uuid().equals(e.getUuid()));
+      final Player player = Groups.player.find(p -> p.ip().equals(e.getIP()));
       if (player != null) {
         player.kick(Packets.KickReason.banned);
       }
@@ -120,14 +120,14 @@ public final class BanSynchronizer extends Plugin {
 
   public static final class JavelinBanEvent implements JavelinEvent {
 
-    private final String uuid;
+    private final String ip;
 
-    public JavelinBanEvent(final String uuid) {
-      this.uuid = uuid;
+    public JavelinBanEvent(final String ip) {
+      this.ip = ip;
     }
 
-    public String getUuid() {
-      return uuid;
+    public String getIP() {
+      return ip;
     }
   }
 }

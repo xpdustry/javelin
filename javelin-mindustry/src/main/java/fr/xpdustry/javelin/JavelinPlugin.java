@@ -24,6 +24,7 @@ import fr.xpdustry.javelin.JavelinConfig.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
+import java.util.concurrent.*;
 import mindustry.mod.*;
 import org.jetbrains.annotations.*;
 
@@ -155,23 +156,16 @@ public final class JavelinPlugin extends Plugin {
 
     @Override
     public void init() {
-      Log.info("Opening javelin socket");
-      socket.start().thenRunAsync(() -> Events.fire(new JavelinSocketStartEvent()), Core.app::post);
+      socket.start();
     }
 
     @Override
     public void dispose() {
-      Log.info("Closing javelin socket");
-      Events.fire(new JavelinSocketCloseEvent());
-      socket.close().join();
+      try {
+        socket.close().get(10L, TimeUnit.SECONDS);
+      } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+        Log.err("Failed to close the javelin socket", e);
+      }
     }
-  }
-
-  public static final class JavelinSocketStartEvent {
-
-  }
-
-  public static final class JavelinSocketCloseEvent {
-
   }
 }

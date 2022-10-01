@@ -5,5 +5,16 @@ plugins {
 
 dependencies {
     api(project(":javelin-core"))
-    runtimeOnly("org.slf4j:slf4j-simple:2.0.1")
+    runtimeOnly("org.slf4j:slf4j-simple:1.7.36")
+}
+
+tasks.shadowJar {
+    minimize {
+        exclude("org.slf4j")
+    }
+    val target = "fr.xpdustry.nucleus.shadow"
+    relocate("net.kyori.event", "$target.event")
+    relocate("org.slf4j", "$target.slf4j")
+    relocate("org.java_websocket", "$target.java_websocket")
+    relocate("com.esotericsoftware.kryo", "$target.kryo")
 }

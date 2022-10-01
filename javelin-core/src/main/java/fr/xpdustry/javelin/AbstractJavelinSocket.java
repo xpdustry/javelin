@@ -40,6 +40,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   protected AbstractJavelinSocket(final int workers) {
     this.executor = Executors.newFixedThreadPool(workers, runnable -> {
       final var worker = new Thread(runnable);
+      worker.setDaemon(true);
       worker.setName("JavelinSocketWorker - " + idGen.getAndIncrement());
       return worker;
     });
