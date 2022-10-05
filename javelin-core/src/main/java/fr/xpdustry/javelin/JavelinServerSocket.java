@@ -40,9 +40,11 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
   private final JavelinServerWebSocket socket;
   private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
   private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
+  private final boolean alwaysAllowLocalConnections;
 
-  JavelinServerSocket(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+  JavelinServerSocket(final int port, final int workers, final boolean alwaysAllowLocalConnections, final @NotNull JavelinAuthenticator authenticator) {
     this.socket = new JavelinServerWebSocket(port, workers, authenticator);
+    this.alwaysAllowLocalConnections = alwaysAllowLocalConnections;
   }
 
   @Override
@@ -83,7 +85,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     socket.broadcast(buffer);
   }
 
-  @SuppressWarnings("NullAway") // dafuq ?
+  @SuppressWarnings("NullAway")
   @Override
   public @NotNull Status getStatus() {
     return status.get();
@@ -117,6 +119,9 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
       final var authorization = request.getFieldValue(Internal.AUTHORIZATION_HEADER);
       final var matcher = Internal.AUTHORIZATION_PATTERN.matcher(authorization);
 
+      if (alwaysAllowLocalConnections && conn.getRemoteSocketAddress().getAddress().isAnyLocalAddress()) {
+        return super.onWebsocketHandshakeReceivedAsServer(conn, draft, request);
+      }
       if (!matcher.matches()) {
         rejectConnection(conn, "Invalid Authorization header");
       }

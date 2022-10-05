@@ -26,7 +26,11 @@ import org.jetbrains.annotations.*;
 public interface JavelinSocket {
 
   static @NotNull JavelinSocket server(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
-    return new JavelinServerSocket(port, workers, authenticator);
+    return new JavelinServerSocket(port, workers, false, authenticator);
+  }
+
+  static @NotNull JavelinSocket server(final int port, final int workers, boolean alwaysAllowLocalConnections, final @NotNull JavelinAuthenticator authenticator) {
+    return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator);
   }
 
   static @NotNull JavelinSocket client(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
