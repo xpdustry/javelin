@@ -36,13 +36,12 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
   private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
 
   private final AtomicBoolean connecting = new AtomicBoolean();
-  private final AtomicBoolean closing = new AtomicBoolean();
   private final ExecutorService executor;
   private final JavelinClientWebSocket socket;
 
-  JavelinClientSocket(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
+  JavelinClientSocket(final @NotNull URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
     this.executor = Executors.newFixedThreadPool(workers);
-    this.socket = new JavelinClientWebSocket(serverUri, username, password);
+    this.socket = new JavelinClientWebSocket(serverUri, authentication);
   }
 
   @Override
@@ -68,8 +67,30 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
   }
 
   @Override
+  public @NotNull CompletableFuture<Void> restart() {
+    if (getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
+      final var future = new CompletableFuture<Void>();
+      ForkJoinPool.commonPool().execute(() -> {
+        try {
+          if (!socket.reconnectBlocking()) {
+            future.completeExceptionally(new IOException("Failed to connect."));
+          } else {
+            future.complete(null);
+          }
+        } catch (final InterruptedException e) {
+          future.cancel(true);
+        } finally {
+          connecting.set(false);
+        }
+      });
+      return future;
+    }
+    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be restarted in it's current state."));
+  }
+
+  @Override
   public @NotNull CompletableFuture<Void> close() {
-    if (getStatus() == Status.OPEN && closing.compareAndSet(false, true)) {
+    if (getStatus() == Status.OPEN) {
       final var future = new CompletableFuture<Void>();
       ForkJoinPool.commonPool().execute(() -> {
         try {
@@ -78,11 +99,11 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
           future.complete(null);
         } catch (final InterruptedException e) {
           future.cancel(true);
-        } finally {
-          closing.set(false);
         }
       });
       return future;
+    } else if (!executor.isShutdown()) {
+      return CompletableFuture.runAsync(executor::shutdown);
     }
     return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be closed in it's current state."));
   }
@@ -111,15 +132,18 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
 
   private final class JavelinClientWebSocket extends WebSocketClient {
 
-    private JavelinClientWebSocket(final URI uri, final @NotNull String username, final char @NotNull [] password) {
+    private JavelinClientWebSocket(final URI uri, final @Nullable PasswordAuthentication authentication) {
       super(uri, Internal.getJavelinDraft());
-      if (username.contains(":")) {
-        throw new IllegalArgumentException("username contains a colon: " + username);
+      if (authentication != null) {
+        final var username = authentication.getUserName();
+        final var password = authentication.getPassword();
+        if (username.contains(":")) {
+          throw new IllegalArgumentException("username contains a colon: " + username);
+        }
+        final var userPass = (username + ':' + String.valueOf(password)).getBytes(StandardCharsets.UTF_8);
+        this.addHeader(Internal.AUTHORIZATION_HEADER, "Basic " + Base64.getEncoder().encodeToString(userPass));
       }
-
-      final var userPass = (username + ':' + String.valueOf(password)).getBytes(StandardCharsets.UTF_8);
-      this.addHeader(Internal.AUTHORIZATION_HEADER, "Basic " + Base64.getEncoder().encodeToString(userPass));
-      this.setConnectionLostTimeout(0);
+      this.setConnectionLostTimeout(60);
     }
 
     @Override

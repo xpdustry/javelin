@@ -35,6 +35,11 @@ final class NoopJavelinSocket implements JavelinSocket {
   }
 
   @Override
+  public @NotNull CompletableFuture<Void> restart() {
+    return CompletableFuture.completedFuture(null);
+  }
+
+  @Override
   public @NotNull CompletableFuture<Void> close() {
     return CompletableFuture.completedFuture(null);
   }

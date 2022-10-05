@@ -12,7 +12,7 @@ tasks.shadowJar {
     minimize {
         exclude("org.slf4j")
     }
-    val target = "fr.xpdustry.nucleus.shadow"
+    val target = "fr.xpdustry.javelin.shadow"
     relocate("org.java_websocket", "$target.java_websocket")
     relocate("net.kyori.event", "$target.event")
     relocate("org.slf4j", "$target.slf4j")

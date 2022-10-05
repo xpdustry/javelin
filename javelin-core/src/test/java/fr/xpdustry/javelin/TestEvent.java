@@ -21,7 +21,7 @@ package fr.xpdustry.javelin;
 import java.util.*;
 import org.jetbrains.annotations.*;
 
-final class TestEvent implements JavelinEvent {
+public final class TestEvent implements JavelinEvent {
 
   private final String payload;
 

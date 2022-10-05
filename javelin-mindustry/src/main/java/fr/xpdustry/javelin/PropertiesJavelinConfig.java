@@ -30,7 +30,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     CLIENT_PASSWORD_KEY = "fr.xpdustry.javelin.client.password",
     CLIENT_SERVER_URI_KEY = "fr.xpdustry.javelin.client.address",
     MODE_KEY = "fr.xpdustry.javelin.socket.mode",
-    WORKERS_KEY = "fr.xpdustry.javelin.socket.workers";
+    WORKERS_KEY = "fr.xpdustry.javelin.socket.workers",
+    ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections";
 
   private static final Properties DEFAULTS = new Properties();
 
@@ -38,11 +39,12 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     DEFAULTS.putAll(
       Map.of(
         SERVER_PORT_KEY, "8080",
-        CLIENT_USERNAME_KEY, "unknown",
-        CLIENT_PASSWORD_KEY, "unknown",
+        CLIENT_USERNAME_KEY, "",
+        CLIENT_PASSWORD_KEY, "",
         CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
         MODE_KEY, "NONE",
-        WORKERS_KEY, "1"
+        WORKERS_KEY, "1",
+        ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false"
       )
     );
   }
@@ -86,5 +88,10 @@ final class PropertiesJavelinConfig implements JavelinConfig {
   @Override
   public int getWorkerCount() {
     return Integer.parseInt(properties.getProperty(WORKERS_KEY));
+  }
+
+  @Override
+  public boolean alwaysAllowLocalConnections() {
+    return Boolean.parseBoolean(properties.getProperty(ALWAYS_ALLOW_LOCAL_CONNECTIONS));
   }
 }

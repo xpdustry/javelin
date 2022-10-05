@@ -38,8 +38,6 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
   private static final Logger logger = LoggerFactory.getLogger(JavelinServerSocket.class);
 
   private final JavelinServerWebSocket socket;
-  private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
-  private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
   private final boolean alwaysAllowLocalConnections;
 
   JavelinServerSocket(final int port, final int workers, final boolean alwaysAllowLocalConnections, final @NotNull JavelinAuthenticator authenticator) {
@@ -49,21 +47,20 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
   @Override
   public @NotNull CompletableFuture<Void> start() {
-    if (status.compareAndSet(Status.CLOSED, Status.OPENING)) {
+    if (socket.status.compareAndSet(Status.CLOSED, Status.OPENING)) {
       try {
         socket.start();
       } catch (final IllegalStateException e) {
-        status.set(Status.CLOSED);
-        startFuture.completeExceptionally(e);
+        socket.startFuture.completeExceptionally(e);
       }
-      return startFuture.copy();
+      return socket.startFuture.copy();
     }
     return CompletableFuture.failedFuture(new IllegalStateException("The socket can't be started in it's current state"));
   }
 
   @Override
   public @NotNull CompletableFuture<Void> close() {
-    if (status.compareAndSet(Status.OPEN, Status.CLOSING)) {
+    if (socket.status.get() == Status.OPEN) {
       final var future = new CompletableFuture<Void>();
       ForkJoinPool.commonPool().execute(() -> {
         try {
@@ -71,8 +68,6 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
           future.complete(null);
         } catch (final InterruptedException e) {
           future.cancel(true);
-        } finally {
-          status.set(Status.CLOSED);
         }
       });
       return future;
@@ -88,7 +83,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
   @SuppressWarnings("NullAway")
   @Override
   public @NotNull Status getStatus() {
-    return status.get();
+    return socket.status.get();
   }
 
   @Override
@@ -98,13 +93,15 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
   private final class JavelinServerWebSocket extends WebSocketServer {
 
+    private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
+    private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
     private final JavelinAuthenticator authenticator;
 
     private JavelinServerWebSocket(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
       super(new InetSocketAddress(port), workers, Collections.singletonList(Internal.getJavelinDraft()));
       this.authenticator = authenticator;
       this.setReuseAddr(true);
-      this.setConnectionLostTimeout(0);
+      this.setConnectionLostTimeout(60);
     }
 
     @Override
@@ -119,8 +116,11 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
       final var authorization = request.getFieldValue(Internal.AUTHORIZATION_HEADER);
       final var matcher = Internal.AUTHORIZATION_PATTERN.matcher(authorization);
 
-      if (alwaysAllowLocalConnections && conn.getRemoteSocketAddress().getAddress().isAnyLocalAddress()) {
-        return super.onWebsocketHandshakeReceivedAsServer(conn, draft, request);
+      if (alwaysAllowLocalConnections && conn.getRemoteSocketAddress().getAddress().isLoopbackAddress()) {
+        final var address = conn.getRemoteSocketAddress().getAddress();
+        if (address.isAnyLocalAddress() || address.isLoopbackAddress()) {
+          return super.onWebsocketHandshakeReceivedAsServer(conn, draft, request);
+        }
       }
       if (!matcher.matches()) {
         rejectConnection(conn, "Invalid Authorization header");
@@ -143,6 +143,8 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
         conn.setAttachment(username);
         return super.onWebsocketHandshakeReceivedAsServer(conn, draft, request);
+      } catch (final InvalidDataException e) {
+        throw e;
       } catch (final Exception e) {
         rejectConnection(conn, "Invalid credential format");
       }
@@ -178,10 +180,12 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
     @Override
     public void onError(final @Nullable WebSocket conn, final @NotNull Exception ex) {
-      if (conn == null) {
-        startFuture.completeExceptionally(ex);
+      if (!startFuture.isDone()) {
         status.set(Status.CLOSED);
-        logger.error("An error occurred.", ex);
+        startFuture.completeExceptionally(ex);
+      }
+      if (conn == null) {
+        logger.error("An error occurred in the Javelin server.", ex);
       } else {
         logger.error("An error occurred in a client connection (address={}).", conn.getRemoteSocketAddress(), ex);
       }
@@ -190,6 +194,12 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     private void rejectConnection(final @NotNull WebSocket conn, final @NotNull String reason) throws InvalidDataException {
       logger.info("Rejected connection from {}: {}", conn.getRemoteSocketAddress(), reason);
       throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, reason);
+    }
+
+    @Override
+    public void run() {
+      super.run();
+      status.set(Status.CLOSED);
     }
   }
 }

@@ -35,6 +35,10 @@ public interface JavelinConfig {
 
   int getWorkerCount();
 
+  default boolean alwaysAllowLocalConnections() {
+    return false;
+  }
+
   enum Mode {
     NONE, SERVER, CLIENT
   }

@@ -34,7 +34,11 @@ public interface JavelinSocket {
   }
 
   static @NotNull JavelinSocket client(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
-    return new JavelinClientSocket(serverUri, username, password, workers);
+    return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password));
+  }
+
+  static @NotNull JavelinSocket client(final @NotNull URI serverUri, final int workers) {
+    return new JavelinClientSocket(serverUri, workers, null);
   }
 
   static @NotNull JavelinSocket noop() {
@@ -42,6 +46,10 @@ public interface JavelinSocket {
   }
 
   @NotNull CompletableFuture<Void> start();
+
+  default @NotNull CompletableFuture<Void> restart() {
+    return CompletableFuture.failedFuture(new UnsupportedOperationException());
+  }
 
   @NotNull CompletableFuture<Void> close();
 

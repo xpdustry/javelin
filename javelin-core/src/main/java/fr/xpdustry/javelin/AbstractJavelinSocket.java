@@ -24,7 +24,6 @@ import com.esotericsoftware.kryo.kryo5.objenesis.strategy.*;
 import java.io.*;
 import java.nio.*;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.*;
 import java.util.function.*;
 import net.kyori.event.*;
 import org.jetbrains.annotations.*;
@@ -36,28 +35,26 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   private final Kryo kryo = new Kryo();
 
   {
-    this.kryo.setRegistrationRequired(false);
-    this.kryo.setAutoReset(true);
-    this.kryo.setOptimizedGenerics(false);
-    this.kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
+    kryo.setRegistrationRequired(false);
+    kryo.setAutoReset(true);
+    kryo.setOptimizedGenerics(false);
+    kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
   }
 
   @Override
   public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final @NotNull E event) {
-    final var future = new CompletableFuture<Void>();
     if (this.getStatus() != Status.OPEN) {
-      future.completeExceptionally(new IOException("The socket is not open."));
+      return CompletableFuture.failedFuture(new IOException("The socket is not open."));
     } else {
       try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
         kryo.writeClass(output, event.getClass());
         kryo.writeObject(output, event);
         onEventSend(output.getByteBuffer());
-        future.complete(null);
+        return CompletableFuture.completedFuture(null);
       } catch (final KryoBufferOverflowException e) {
-        future.completeExceptionally(new IOException("The event is too large.", e));
+        return CompletableFuture.failedFuture(new IOException("The event is too large.", e));
       }
     }
-    return future;
   }
 
   @Override

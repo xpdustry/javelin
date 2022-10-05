@@ -20,6 +20,7 @@ package fr.xpdustry.javelin;
 
 import arc.*;
 import arc.util.*;
+import fr.xpdustry.javelin.JavelinSocket.*;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
@@ -65,15 +66,20 @@ public final class JavelinPlugin extends Plugin {
       socket = JavelinSocket.server(
         config.getServerPort(),
         config.getWorkerCount(),
+        config.alwaysAllowLocalConnections(),
         authenticator
       );
     } else if (config.getMode() == JavelinConfig.Mode.CLIENT) {
-      socket = JavelinSocket.client(
-        config.getClientServerUri(),
-        config.getClientUsername(),
-        config.getClientPassword(),
-        config.getWorkerCount()
-      );
+      if (config.getClientUsername().isBlank()) {
+        socket = JavelinSocket.client(config.getClientServerUri(), config.getWorkerCount());
+      } else {
+        socket = JavelinSocket.client(
+          config.getClientServerUri(),
+          config.getClientUsername(),
+          config.getClientPassword(),
+          config.getWorkerCount()
+        );
+      }
     }
 
     Core.app.addListener(new JavelinApplicationListener(socket));
@@ -143,6 +149,7 @@ public final class JavelinPlugin extends Plugin {
   private static final class JavelinApplicationListener implements ApplicationListener {
 
     private final JavelinSocket socket;
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
     private JavelinApplicationListener(final @NotNull JavelinSocket socket) {
       this.socket = socket;
@@ -151,12 +158,20 @@ public final class JavelinPlugin extends Plugin {
     @Override
     public void init() {
       socket.start();
+      executor.scheduleWithFixedDelay(() -> {
+        Log.debug("Checking Javelin socket status.");
+        if (socket.getStatus() == Status.CLOSED) {
+          Log.debug("The Javelin socket is closed, restarting.");
+          socket.restart();
+        }
+      }, 5L, 5L, TimeUnit.MINUTES);
     }
 
     @Override
     public void dispose() {
+      executor.shutdown();
       try {
-        socket.close().get(10L, TimeUnit.SECONDS);
+        socket.close().get(15L, TimeUnit.SECONDS);
       } catch (final InterruptedException | ExecutionException | TimeoutException e) {
         Log.err("Failed to close the javelin socket", e);
       }
