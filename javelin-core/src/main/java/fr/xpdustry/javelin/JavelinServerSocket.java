@@ -37,38 +37,45 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
   private static final Logger logger = LoggerFactory.getLogger(JavelinServerSocket.class);
 
-  private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
   private final JavelinServerWebSocket socket;
+  private final AtomicReference<Status> status = new AtomicReference<>(Status.CLOSED);
+  private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
 
   JavelinServerSocket(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
-    super(workers);
-    this.socket = new JavelinServerWebSocket(port, authenticator);
+    this.socket = new JavelinServerWebSocket(port, workers, authenticator);
   }
 
   @Override
   public @NotNull CompletableFuture<Void> start() {
-    return CompletableFuture.runAsync(() -> {
-      if (status.get() == Status.CLOSED) {
+    if (status.compareAndSet(Status.CLOSED, Status.OPENING)) {
+      try {
         socket.start();
-        status.set(Status.OPEN);
+      } catch (final IllegalStateException e) {
+        status.set(Status.CLOSED);
+        startFuture.completeExceptionally(e);
       }
-    });
+      return startFuture.copy();
+    }
+    return CompletableFuture.failedFuture(new IllegalStateException("The socket can't be started in it's current state"));
   }
 
   @Override
   public @NotNull CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(() -> {
-      if (status.get() == Status.OPEN) {
-        status.set(Status.CLOSING);
+    if (status.compareAndSet(Status.OPEN, Status.CLOSING)) {
+      final var future = new CompletableFuture<Void>();
+      ForkJoinPool.commonPool().execute(() -> {
         try {
           socket.stop();
+          future.complete(null);
         } catch (final InterruptedException e) {
-          throw new CompletionException(e);
+          future.cancel(true);
         } finally {
           status.set(Status.CLOSED);
         }
-      }
-    }).thenCompose(v -> super.close());
+      });
+      return future;
+    }
+    return CompletableFuture.failedFuture(new IllegalStateException("The socket can't be closed in it's current state"));
   }
 
   @Override
@@ -91,8 +98,8 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
     private final JavelinAuthenticator authenticator;
 
-    private JavelinServerWebSocket(final int port, final @NotNull JavelinAuthenticator authenticator) {
-      super(new InetSocketAddress(port), Collections.singletonList(Internal.getJavelinDraft()));
+    private JavelinServerWebSocket(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+      super(new InetSocketAddress(port), workers, Collections.singletonList(Internal.getJavelinDraft()));
       this.authenticator = authenticator;
       this.setReuseAddr(true);
       this.setConnectionLostTimeout(0);
@@ -101,6 +108,8 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     @Override
     public void onStart() {
       logger.info("The server has been successfully started.");
+      status.set(Status.OPEN);
+      startFuture.complete(null);
     }
 
     @Override
@@ -123,8 +132,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         if (!authenticator.authenticate(username, password)) {
           rejectConnection(conn, "Invalid credentials");
         }
-        // Check if already connected
-        if (getConnections().stream().map(this::getWebSocketName).anyMatch(name -> name.equals(username))) {
+        if (getConnections().stream().map(WebSocket::<String>getAttachment).anyMatch(username::equals)) {
           rejectConnection(conn, "Already connected");
         }
 
@@ -139,20 +147,20 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
 
     @Override
     public void onOpen(final @NotNull WebSocket conn, final @NotNull ClientHandshake handshake) {
-      logger.info("{} has connected.", getWebSocketName(conn));
+      logger.info("{} has connected.", conn.getRemoteSocketAddress());
     }
 
     @Override
     public void onClose(final @NotNull WebSocket conn, final int code, final @NotNull String reason, final boolean remote) {
       switch (code) {
-        case CloseFrame.NORMAL, CloseFrame.GOING_AWAY -> logger.info("{} connection has been closed.", getWebSocketName(conn));
-        default -> logger.error("{} connection has been closed unexpectedly (code={}, reason={}).", getWebSocketName(conn), code, reason);
+        case CloseFrame.NORMAL, CloseFrame.GOING_AWAY -> logger.info("The connection {} has been closed.", conn.getRemoteSocketAddress());
+        default -> logger.error("The connection {} has been closed unexpectedly (code={}, reason={}).", conn.getRemoteSocketAddress(), code, reason);
       }
     }
 
     @Override
     public void onMessage(final @NotNull WebSocket conn, final @NotNull String message) {
-      logger.debug("Received text message from {}, ignoring (message={}).", getWebSocketName(conn), message);
+      logger.debug("Received text message from {}, ignoring (message={}).", conn.getRemoteSocketAddress(), message);
     }
 
     @Override
@@ -164,12 +172,14 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    public void onError(final @NotNull WebSocket conn, final @NotNull Exception ex) {
-      logger.error("An error occurred in {} connection.", getWebSocketName(conn), ex);
-    }
-
-    private @NotNull String getWebSocketName(final @NotNull WebSocket socket) {
-      return socket.getAttachment();
+    public void onError(final @Nullable WebSocket conn, final @NotNull Exception ex) {
+      if (conn == null) {
+        startFuture.completeExceptionally(ex);
+        status.set(Status.CLOSED);
+        logger.error("An error occurred.", ex);
+      } else {
+        logger.error("An error occurred in a client connection (address={}).", conn.getRemoteSocketAddress(), ex);
+      }
     }
 
     private void rejectConnection(final @NotNull WebSocket conn, final @NotNull String reason) throws InvalidDataException {

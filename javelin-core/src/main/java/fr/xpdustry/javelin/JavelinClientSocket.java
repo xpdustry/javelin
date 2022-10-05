@@ -36,40 +36,55 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
   private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
 
   private final AtomicBoolean connecting = new AtomicBoolean();
+  private final AtomicBoolean closing = new AtomicBoolean();
+  private final ExecutorService executor;
   private final JavelinClientWebSocket socket;
 
   JavelinClientSocket(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
-    super(workers);
+    this.executor = Executors.newFixedThreadPool(workers);
     this.socket = new JavelinClientWebSocket(serverUri, username, password);
   }
 
   @Override
   public @NotNull CompletableFuture<Void> start() {
-    if (getStatus() == Status.CLOSED) {
-      return CompletableFuture.runAsync(() -> {
+    if (getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
+      final var future = new CompletableFuture<Void>();
+      ForkJoinPool.commonPool().execute(() -> {
         try {
           if (!socket.connectBlocking()) {
-            throw new IOException("Failed to connect.");
+            future.completeExceptionally(new IOException("Failed to connect."));
+          } else {
+            future.complete(null);
           }
-        } catch (final InterruptedException | IOException e) {
-          throw new CompletionException(e);
+        } catch (final InterruptedException e) {
+          future.cancel(true);
+        } finally {
+          connecting.set(false);
         }
       });
+      return future;
     }
-    return CompletableFuture.completedFuture(null);
+    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be started in it's current state."));
   }
 
   @Override
   public @NotNull CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(() -> {
-      if (getStatus() != Status.OPEN) {
+    if (getStatus() == Status.OPEN && closing.compareAndSet(false, true)) {
+      final var future = new CompletableFuture<Void>();
+      ForkJoinPool.commonPool().execute(() -> {
         try {
           socket.closeBlocking();
+          executor.shutdown();
+          future.complete(null);
         } catch (final InterruptedException e) {
-          throw new CompletionException(e);
+          future.cancel(true);
+        } finally {
+          closing.set(false);
         }
-      }
-    }).thenCompose(v -> super.close());
+      });
+      return future;
+    }
+    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be closed in it's current state."));
   }
 
   @Override
@@ -119,7 +134,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
 
     @Override
     public void onMessage(final @NotNull ByteBuffer bytes) {
-      onEventReceive(bytes);
+      executor.execute(() -> onEventReceive(bytes));
     }
 
     @Override

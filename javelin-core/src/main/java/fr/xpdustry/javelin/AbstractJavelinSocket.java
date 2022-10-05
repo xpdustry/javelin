@@ -34,17 +34,8 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
 
   private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
   private final Kryo kryo = new Kryo();
-  private final AtomicInteger idGen = new AtomicInteger();
-  private final ExecutorService executor;
 
-  protected AbstractJavelinSocket(final int workers) {
-    this.executor = Executors.newFixedThreadPool(workers, runnable -> {
-      final var worker = new Thread(runnable);
-      worker.setDaemon(true);
-      worker.setName("JavelinSocketWorker - " + idGen.getAndIncrement());
-      return worker;
-    });
-
+  {
     this.kryo.setRegistrationRequired(false);
     this.kryo.setAutoReset(true);
     this.kryo.setOptimizedGenerics(false);
@@ -57,16 +48,14 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     if (this.getStatus() != Status.OPEN) {
       future.completeExceptionally(new IOException("The socket is not open."));
     } else {
-      executor.execute(() -> {
-        try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
-          kryo.writeClass(output, event.getClass());
-          kryo.writeObject(output, event);
-          onEventSend(output.getByteBuffer());
-          future.complete(null);
-        } catch (final KryoBufferOverflowException e) {
-          future.completeExceptionally(new IOException("The event is too large.", e));
-        }
-      });
+      try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
+        kryo.writeClass(output, event.getClass());
+        kryo.writeObject(output, event);
+        onEventSend(output.getByteBuffer());
+        future.complete(null);
+      } catch (final KryoBufferOverflowException e) {
+        future.completeExceptionally(new IOException("The event is too large.", e));
+      }
     }
     return future;
   }
@@ -74,13 +63,6 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
   @Override
   public @NotNull <E extends JavelinEvent> Subscription subscribe(final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber) {
     return bus.subscribe(event, subscriber::accept)::unsubscribe;
-  }
-
-  @Override
-  public @NotNull CompletableFuture<Void> close() {
-    return CompletableFuture.runAsync(() -> {
-      if (!executor.isShutdown()) executor.shutdown();
-    });
   }
 
   protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
@@ -93,11 +75,9 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
       }
       @SuppressWarnings("unchecked") final var clazz = (Class<? extends JavelinEvent>) registration.getType();
       if (bus.subscribed(clazz)) {
-        final var event = kryo.readObject(input, clazz);
-        executor.execute(() -> bus.post(event)
+        bus.post(kryo.readObject(input, clazz))
           .exceptions()
-          .forEach((s, t) -> getLogger().error("An exception occurred while handling an event in " + s, t))
-        );
+          .forEach((s, t) -> getLogger().error("An exception occurred while handling an event in " + s, t));
       }
     }
   }
