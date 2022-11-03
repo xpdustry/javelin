@@ -4,7 +4,7 @@ import net.ltgt.gradle.errorprone.CheckSeverity
 plugins {
     id("net.kyori.indra")
     id("net.kyori.indra.publishing")
-    id("net.kyori.indra.license-header")
+    id("net.kyori.indra.licenser.spotless")
     id("net.ltgt.errorprone")
 }
 
@@ -40,10 +40,6 @@ tasks.withType(JavaCompile::class.java).configureEach {
             option("NullAway:AnnotatedPackages", "fr.xpdustry.javelin")
         }
     }
-}
-
-license {
-    header(rootProject.file("LICENSE_HEADER.md"))
 }
 
 signing {
@@ -83,5 +79,15 @@ indra {
                 }
             }
         }
+    }
+}
+
+indraSpotlessLicenser {
+    licenseHeaderFile(rootProject.file("LICENSE_HEADER.md"))
+}
+
+spotless {
+    java {
+        // palantirJavaFormat()
     }
 }
