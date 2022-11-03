@@ -24,7 +24,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Validate Gradle Wrapper
-        uses: gradle/wrapper-validation-action@v1
+        uses: gradle/wrapper-validation-action@9aa31f26bc8e536d1faf4b332bb8365350743a18
 
       - name: Set up JDK 17
         uses: actions/setup-java@v3
@@ -34,7 +34,7 @@ jobs:
           cache: 'gradle'
 
       - name: Build Artifact
-        run: ./gradlew build --no-daemon
+        run: ./gradlew build
 
       - name: Set up Artifact Upload
         id: upload
@@ -48,7 +48,7 @@ jobs:
 
       - name: Publish to Xpdustry
         if: ${{ github.event_name != 'pull_request' }}
-        run: ./gradlew publish --no-daemon
+        run: ./gradlew publish
         env:
           ORG_GRADLE_PROJECT_xpdustryUsername: "${{ secrets.XPDUSTRY_MAVEN_USERNAME }}"
           ORG_GRADLE_PROJECT_xpdustryPassword: "${{ secrets.XPDUSTRY_MAVEN_PASSWORD }}"
@@ -57,7 +57,7 @@ jobs:
 
       - name: Determine Status
         run: |
-          if [ "$(./gradlew properties --no-daemon | awk '/^version:/ { print $2; }' | grep '\-SNAPSHOT')" ]; then
+          if [ "$(./gradlew properties | awk '/^version:/ { print $2; }' | grep '\-SNAPSHOT')" ]; then
             echo "STATUS=snapshot" >> $GITHUB_ENV
           else
             echo "STATUS=release" >> $GITHUB_ENV
