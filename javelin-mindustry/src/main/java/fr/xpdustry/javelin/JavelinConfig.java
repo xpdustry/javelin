@@ -23,23 +23,25 @@ import org.jetbrains.annotations.*;
 
 public interface JavelinConfig {
 
-  @NotNull Mode getMode();
+    @NotNull Mode getMode();
 
-  int getServerPort();
+    int getServerPort();
 
-  @NotNull String getClientUsername();
+    @NotNull String getClientUsername();
 
-  char @NotNull [] getClientPassword();
+    char @NotNull [] getClientPassword();
 
-  @NotNull URI getClientServerUri();
+    @NotNull URI getClientServerUri();
 
-  int getWorkerCount();
+    int getWorkerCount();
 
-  default boolean alwaysAllowLocalConnections() {
-    return false;
-  }
+    default boolean alwaysAllowLocalConnections() {
+        return false;
+    }
 
-  enum Mode {
-    NONE, SERVER, CLIENT
-  }
+    enum Mode {
+        NONE,
+        SERVER,
+        CLIENT
+    }
 }

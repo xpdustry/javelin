@@ -24,38 +24,38 @@ import org.jetbrains.annotations.*;
 
 final class NoopJavelinSocket implements JavelinSocket {
 
-  static final NoopJavelinSocket INSTANCE = new NoopJavelinSocket();
+    static final NoopJavelinSocket INSTANCE = new NoopJavelinSocket();
 
-  private NoopJavelinSocket() {
-  }
+    private NoopJavelinSocket() {}
 
-  @Override
-  public @NotNull CompletableFuture<Void> start() {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public @NotNull CompletableFuture<Void> start() {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public @NotNull CompletableFuture<Void> restart() {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public @NotNull CompletableFuture<Void> restart() {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public @NotNull CompletableFuture<Void> close() {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public @NotNull CompletableFuture<Void> close() {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(@NotNull E event) {
-    return CompletableFuture.completedFuture(null);
-  }
+    @Override
+    public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(@NotNull E event) {
+        return CompletableFuture.completedFuture(null);
+    }
 
-  @Override
-  public @NotNull <E extends JavelinEvent> Subscription subscribe(@NotNull Class<E> event, @NotNull Consumer<E> subscriber) {
-    return () -> {};
-  }
+    @Override
+    public @NotNull <E extends JavelinEvent> Subscription subscribe(
+            @NotNull Class<E> event, @NotNull Consumer<E> subscriber) {
+        return () -> {};
+    }
 
-  @Override
-  public @NotNull Status getStatus() {
-    return Status.CLOSED;
-  }
+    @Override
+    public @NotNull Status getStatus() {
+        return Status.CLOSED;
+    }
 }

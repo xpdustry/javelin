@@ -25,46 +25,59 @@ import org.jetbrains.annotations.*;
 
 public interface JavelinSocket {
 
-  static @NotNull JavelinSocket server(final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
-    return new JavelinServerSocket(port, workers, false, authenticator);
-  }
+    static @NotNull JavelinSocket server(
+            final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+        return new JavelinServerSocket(port, workers, false, authenticator);
+    }
 
-  static @NotNull JavelinSocket server(final int port, final int workers, boolean alwaysAllowLocalConnections, final @NotNull JavelinAuthenticator authenticator) {
-    return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator);
-  }
+    static @NotNull JavelinSocket server(
+            final int port,
+            final int workers,
+            boolean alwaysAllowLocalConnections,
+            final @NotNull JavelinAuthenticator authenticator) {
+        return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator);
+    }
 
-  static @NotNull JavelinSocket client(final @NotNull URI serverUri, final @NotNull String username, final char @NotNull [] password, final int workers) {
-    return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password));
-  }
+    static @NotNull JavelinSocket client(
+            final @NotNull URI serverUri,
+            final @NotNull String username,
+            final char @NotNull [] password,
+            final int workers) {
+        return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password));
+    }
 
-  static @NotNull JavelinSocket client(final @NotNull URI serverUri, final int workers) {
-    return new JavelinClientSocket(serverUri, workers, null);
-  }
+    static @NotNull JavelinSocket client(final @NotNull URI serverUri, final int workers) {
+        return new JavelinClientSocket(serverUri, workers, null);
+    }
 
-  static @NotNull JavelinSocket noop() {
-    return NoopJavelinSocket.INSTANCE;
-  }
+    static @NotNull JavelinSocket noop() {
+        return NoopJavelinSocket.INSTANCE;
+    }
 
-  @NotNull CompletableFuture<Void> start();
+    @NotNull CompletableFuture<Void> start();
 
-  default @NotNull CompletableFuture<Void> restart() {
-    return CompletableFuture.failedFuture(new UnsupportedOperationException());
-  }
+    default @NotNull CompletableFuture<Void> restart() {
+        return CompletableFuture.failedFuture(new UnsupportedOperationException());
+    }
 
-  @NotNull CompletableFuture<Void> close();
+    @NotNull CompletableFuture<Void> close();
 
-  <E extends JavelinEvent> @NotNull CompletableFuture<Void> sendEvent(final @NotNull E event);
+    <E extends JavelinEvent> @NotNull CompletableFuture<Void> sendEvent(final @NotNull E event);
 
-  <E extends JavelinEvent> @NotNull Subscription subscribe(final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber);
+    <E extends JavelinEvent> @NotNull Subscription subscribe(
+            final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber);
 
-  @NotNull Status getStatus();
+    @NotNull Status getStatus();
 
-  enum Status {
-    OPENING, OPEN, CLOSING, CLOSED
-  }
+    enum Status {
+        OPENING,
+        OPEN,
+        CLOSING,
+        CLOSED
+    }
 
-  interface Subscription {
+    interface Subscription {
 
-    void unsubscribe();
-  }
+        void unsubscribe();
+    }
 }

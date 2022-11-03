@@ -31,53 +31,54 @@ import org.slf4j.*;
 
 abstract class AbstractJavelinSocket implements JavelinSocket {
 
-  private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
-  private final Kryo kryo = new Kryo();
+    private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
+    private final Kryo kryo = new Kryo();
 
-  {
-    kryo.setRegistrationRequired(false);
-    kryo.setAutoReset(true);
-    kryo.setOptimizedGenerics(false);
-    kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
-  }
-
-  @Override
-  public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final @NotNull E event) {
-    if (this.getStatus() != Status.OPEN) {
-      return CompletableFuture.failedFuture(new IOException("The socket is not open."));
-    } else {
-      try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
-        kryo.writeClass(output, event.getClass());
-        kryo.writeObject(output, event);
-        onEventSend(output.getByteBuffer());
-        return CompletableFuture.completedFuture(null);
-      } catch (final KryoBufferOverflowException e) {
-        return CompletableFuture.failedFuture(new IOException("The event is too large.", e));
-      }
+    {
+        kryo.setRegistrationRequired(false);
+        kryo.setAutoReset(true);
+        kryo.setOptimizedGenerics(false);
+        kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
     }
-  }
 
-  @Override
-  public @NotNull <E extends JavelinEvent> Subscription subscribe(final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber) {
-    return bus.subscribe(event, subscriber::accept)::unsubscribe;
-  }
-
-  protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
-
-  protected void onEventReceive(final @NotNull ByteBuffer buffer) {
-    try (final var input = new ByteBufferInput(buffer)) {
-      final var registration = kryo.readClass(input);
-      if (registration == null) {
-        return;
-      }
-      @SuppressWarnings("unchecked") final var clazz = (Class<? extends JavelinEvent>) registration.getType();
-      if (bus.subscribed(clazz)) {
-        bus.post(kryo.readObject(input, clazz))
-          .exceptions()
-          .forEach((s, t) -> getLogger().error("An exception occurred while handling an event in " + s, t));
-      }
+    @Override
+    public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final @NotNull E event) {
+        if (this.getStatus() != Status.OPEN) {
+            return CompletableFuture.failedFuture(new IOException("The socket is not open."));
+        } else {
+            try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
+                kryo.writeClass(output, event.getClass());
+                kryo.writeObject(output, event);
+                onEventSend(output.getByteBuffer());
+                return CompletableFuture.completedFuture(null);
+            } catch (final KryoBufferOverflowException e) {
+                return CompletableFuture.failedFuture(new IOException("The event is too large.", e));
+            }
+        }
     }
-  }
 
-  protected abstract Logger getLogger();
+    @Override
+    public @NotNull <E extends JavelinEvent> Subscription subscribe(
+            final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber) {
+        return bus.subscribe(event, subscriber::accept)::unsubscribe;
+    }
+
+    protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
+
+    protected void onEventReceive(final @NotNull ByteBuffer buffer) {
+        try (final var input = new ByteBufferInput(buffer)) {
+            final var registration = kryo.readClass(input);
+            if (registration == null) {
+                return;
+            }
+            @SuppressWarnings("unchecked")
+            final var clazz = (Class<? extends JavelinEvent>) registration.getType();
+            if (bus.subscribed(clazz)) {
+                bus.post(kryo.readObject(input, clazz)).exceptions().forEach((s, t) -> getLogger()
+                        .error("An exception occurred while handling an event in " + s, t));
+            }
+        }
+    }
+
+    protected abstract Logger getLogger();
 }

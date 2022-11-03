@@ -26,15 +26,14 @@ import org.java_websocket.protocols.*;
 
 final class Internal {
 
-  public static final int MAX_EVENT_SIZE = 8192;
+    public static final int MAX_EVENT_SIZE = 8192;
 
-  public static final String AUTHORIZATION_HEADER = "Authorization";
-  public static final Pattern AUTHORIZATION_PATTERN = Pattern.compile("^Basic (.+)$");
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+    public static final Pattern AUTHORIZATION_PATTERN = Pattern.compile("^Basic (.+)$");
 
-  public static Draft getJavelinDraft() {
-    return new Draft_6455(
-      Collections.singletonList(new PerMessageDeflateExtension()),
-      List.of(new Protocol(""), new Protocol("ocpp2.0"))
-    );
-  }
+    public static Draft getJavelinDraft() {
+        return new Draft_6455(
+                Collections.singletonList(new PerMessageDeflateExtension()),
+                List.of(new Protocol(""), new Protocol("ocpp2.0")));
+    }
 }

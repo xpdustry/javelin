@@ -18,76 +18,76 @@
  */
 package fr.xpdustry.javelin;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.net.*;
 import java.time.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
 
-import static org.assertj.core.api.Assertions.*;
-
 public final class JavelinClientSocketTest {
 
-  private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5L);
+    private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(5L);
 
-  private JavelinServerSocket server;
-  private JavelinClientSocket client;
+    private JavelinServerSocket server;
+    private JavelinClientSocket client;
 
-  @BeforeEach
-  void setup() {
-    server = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
-    client = new JavelinClientSocket(URI.create("ws://localhost:12345"), 1, null);
-  }
+    @BeforeEach
+    void setup() {
+        server = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
+        client = new JavelinClientSocket(URI.create("ws://localhost:12345"), 1, null);
+    }
 
-  @Test
-  void test_client_simple() {
-    assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
-  }
+    @Test
+    void test_client_simple() {
+        assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
+    }
 
-  @Test
-  void test_client_restart() {
-    assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.restart()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
-  }
+    @Test
+    void test_client_restart() {
+        assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.restart()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
+    }
 
-  @Test
-  void test_client_restart_with_server() {
-    final var server1 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
-    assertThat(server1.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(server1.close()).succeedsWithin(DEFAULT_TIMEOUT);
+    @Test
+    void test_client_restart_with_server() {
+        final var server1 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
+        assertThat(server1.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server1.close()).succeedsWithin(DEFAULT_TIMEOUT);
 
-    final var server2 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
-    assertThat(server2.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.restart()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(server2.close()).succeedsWithin(DEFAULT_TIMEOUT);
-  }
+        final var server2 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
+        assertThat(server2.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.restart()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server2.close()).succeedsWithin(DEFAULT_TIMEOUT);
+    }
 
-  @Test
-  void test_client_send_event() {
-    final var event = new TestEvent("bob");
-    final var received = new CompletableFuture<TestEvent>();
+    @Test
+    void test_client_send_event() {
+        final var event = new TestEvent("bob");
+        final var received = new CompletableFuture<TestEvent>();
 
-    assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
 
-    server.subscribe(TestEvent.class, received::complete);
-    assertThat(client.sendEvent(event)).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(received).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(received).isCompletedWithValueMatching(event::equals);
+        server.subscribe(TestEvent.class, received::complete);
+        assertThat(client.sendEvent(event)).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(received).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(received).isCompletedWithValueMatching(event::equals);
 
-    assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
-    assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
-  }
+        assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
+        assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
+    }
 
-  @Test
-  void test_client_fails_serverless_connection() {
-    assertThat(client.start()).failsWithin(DEFAULT_TIMEOUT);
-  }
+    @Test
+    void test_client_fails_serverless_connection() {
+        assertThat(client.start()).failsWithin(DEFAULT_TIMEOUT);
+    }
 }

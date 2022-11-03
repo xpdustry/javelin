@@ -33,146 +33,153 @@ import org.slf4j.*;
 
 final class JavelinClientSocket extends AbstractJavelinSocket {
 
-  private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
+    private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
 
-  private final AtomicBoolean connecting = new AtomicBoolean();
-  private final ExecutorService executor;
-  private final JavelinClientWebSocket socket;
+    private final AtomicBoolean connecting = new AtomicBoolean();
+    private final ExecutorService executor;
+    private final JavelinClientWebSocket socket;
 
-  JavelinClientSocket(final @NotNull URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
-    this.executor = Executors.newFixedThreadPool(workers);
-    this.socket = new JavelinClientWebSocket(serverUri, authentication);
-  }
+    JavelinClientSocket(
+            final @NotNull URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
+        this.executor = Executors.newFixedThreadPool(workers);
+        this.socket = new JavelinClientWebSocket(serverUri, authentication);
+    }
 
-  @Override
-  public @NotNull CompletableFuture<Void> start() {
-    if (getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
-      final var future = new CompletableFuture<Void>();
-      ForkJoinPool.commonPool().execute(() -> {
-        try {
-          if (!socket.connectBlocking()) {
-            future.completeExceptionally(new IOException("Failed to connect."));
-          } else {
-            future.complete(null);
-          }
-        } catch (final InterruptedException e) {
-          future.cancel(true);
-        } finally {
-          connecting.set(false);
+    @Override
+    public @NotNull CompletableFuture<Void> start() {
+        if (getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
+            final var future = new CompletableFuture<Void>();
+            ForkJoinPool.commonPool().execute(() -> {
+                try {
+                    if (!socket.connectBlocking()) {
+                        future.completeExceptionally(new IOException("Failed to connect."));
+                    } else {
+                        future.complete(null);
+                    }
+                } catch (final InterruptedException e) {
+                    future.cancel(true);
+                } finally {
+                    connecting.set(false);
+                }
+            });
+            return future;
         }
-      });
-      return future;
+        return CompletableFuture.failedFuture(
+                new IllegalStateException("The client socket can't be started in it's current state."));
     }
-    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be started in it's current state."));
-  }
 
-  @Override
-  public @NotNull CompletableFuture<Void> restart() {
-    if (getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
-      final var future = new CompletableFuture<Void>();
-      ForkJoinPool.commonPool().execute(() -> {
-        try {
-          if (!socket.reconnectBlocking()) {
-            future.completeExceptionally(new IOException("Failed to connect."));
-          } else {
-            future.complete(null);
-          }
-        } catch (final InterruptedException e) {
-          future.cancel(true);
-        } finally {
-          connecting.set(false);
+    @Override
+    public @NotNull CompletableFuture<Void> restart() {
+        if (getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
+            final var future = new CompletableFuture<Void>();
+            ForkJoinPool.commonPool().execute(() -> {
+                try {
+                    if (!socket.reconnectBlocking()) {
+                        future.completeExceptionally(new IOException("Failed to connect."));
+                    } else {
+                        future.complete(null);
+                    }
+                } catch (final InterruptedException e) {
+                    future.cancel(true);
+                } finally {
+                    connecting.set(false);
+                }
+            });
+            return future;
         }
-      });
-      return future;
+        return CompletableFuture.failedFuture(
+                new IllegalStateException("The client socket can't be restarted in it's current state."));
     }
-    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be restarted in it's current state."));
-  }
 
-  @Override
-  public @NotNull CompletableFuture<Void> close() {
-    if (getStatus() == Status.OPEN) {
-      final var future = new CompletableFuture<Void>();
-      ForkJoinPool.commonPool().execute(() -> {
-        try {
-          socket.closeBlocking();
-          executor.shutdown();
-          future.complete(null);
-        } catch (final InterruptedException e) {
-          future.cancel(true);
+    @Override
+    public @NotNull CompletableFuture<Void> close() {
+        if (getStatus() == Status.OPEN) {
+            final var future = new CompletableFuture<Void>();
+            ForkJoinPool.commonPool().execute(() -> {
+                try {
+                    socket.closeBlocking();
+                    executor.shutdown();
+                    future.complete(null);
+                } catch (final InterruptedException e) {
+                    future.cancel(true);
+                }
+            });
+            return future;
+        } else if (!executor.isShutdown()) {
+            return CompletableFuture.runAsync(executor::shutdown);
         }
-      });
-      return future;
-    } else if (!executor.isShutdown()) {
-      return CompletableFuture.runAsync(executor::shutdown);
+        return CompletableFuture.failedFuture(
+                new IllegalStateException("The client socket can't be closed in it's current state."));
     }
-    return CompletableFuture.failedFuture(new IllegalStateException("The client socket can't be closed in it's current state."));
-  }
 
-  @Override
-  protected void onEventSend(final @NotNull ByteBuffer buffer) {
-    socket.send(buffer);
-  }
-
-  @Override
-  public @NotNull Status getStatus() {
-    if (connecting.get()) {
-      return Status.OPENING;
+    @Override
+    protected void onEventSend(final @NotNull ByteBuffer buffer) {
+        socket.send(buffer);
     }
-    return switch (socket.getReadyState()) {
-      case OPEN -> Status.OPEN;
-      case CLOSING -> Status.CLOSING;
-      default -> Status.CLOSED;
-    };
-  }
 
-  @Override
-  protected Logger getLogger() {
-    return logger;
-  }
-
-  private final class JavelinClientWebSocket extends WebSocketClient {
-
-    private JavelinClientWebSocket(final URI uri, final @Nullable PasswordAuthentication authentication) {
-      super(uri, Internal.getJavelinDraft());
-      if (authentication != null) {
-        final var username = authentication.getUserName();
-        final var password = authentication.getPassword();
-        if (username.contains(":")) {
-          throw new IllegalArgumentException("username contains a colon: " + username);
+    @Override
+    public @NotNull Status getStatus() {
+        if (connecting.get()) {
+            return Status.OPENING;
         }
-        final var userPass = (username + ':' + String.valueOf(password)).getBytes(StandardCharsets.UTF_8);
-        this.addHeader(Internal.AUTHORIZATION_HEADER, "Basic " + Base64.getEncoder().encodeToString(userPass));
-      }
-      this.setConnectionLostTimeout(60);
+        return switch (socket.getReadyState()) {
+            case OPEN -> Status.OPEN;
+            case CLOSING -> Status.CLOSING;
+            default -> Status.CLOSED;
+        };
     }
 
     @Override
-    public void onOpen(final @NotNull ServerHandshake handshake) {
-      logger.info("The connection has been successfully established with the server.");
+    protected Logger getLogger() {
+        return logger;
     }
 
-    @Override
-    public void onMessage(final @NotNull String message) {
-      logger.info("Received text message, ignoring (message={}).", message);
-    }
+    private final class JavelinClientWebSocket extends WebSocketClient {
 
-    @Override
-    public void onMessage(final @NotNull ByteBuffer bytes) {
-      executor.execute(() -> onEventReceive(bytes));
-    }
+        private JavelinClientWebSocket(final URI uri, final @Nullable PasswordAuthentication authentication) {
+            super(uri, Internal.getJavelinDraft());
+            if (authentication != null) {
+                final var username = authentication.getUserName();
+                final var password = authentication.getPassword();
+                if (username.contains(":")) {
+                    throw new IllegalArgumentException("username contains a colon: " + username);
+                }
+                final var userPass = (username + ':' + String.valueOf(password)).getBytes(StandardCharsets.UTF_8);
+                this.addHeader(
+                        Internal.AUTHORIZATION_HEADER,
+                        "Basic " + Base64.getEncoder().encodeToString(userPass));
+            }
+            this.setConnectionLostTimeout(60);
+        }
 
-    @Override
-    public void onClose(final int code, final @NotNull String reason, final boolean remote) {
-      switch (code) {
-        case CloseFrame.NORMAL -> logger.info("The connection has been closed.");
-        case CloseFrame.GOING_AWAY -> logger.info("The connection has been closed by the server.");
-        default -> logger.error("The connection has been unexpectedly closed (code={}, reason={}).", code, reason);
-      }
-    }
+        @Override
+        public void onOpen(final @NotNull ServerHandshake handshake) {
+            logger.info("The connection has been successfully established with the server.");
+        }
 
-    @Override
-    public void onError(final @NotNull Exception ex) {
-      logger.error("An exception occurred in the websocket client.", ex);
+        @Override
+        public void onMessage(final @NotNull String message) {
+            logger.info("Received text message, ignoring (message={}).", message);
+        }
+
+        @Override
+        public void onMessage(final @NotNull ByteBuffer bytes) {
+            executor.execute(() -> onEventReceive(bytes));
+        }
+
+        @Override
+        public void onClose(final int code, final @NotNull String reason, final boolean remote) {
+            switch (code) {
+                case CloseFrame.NORMAL -> logger.info("The connection has been closed.");
+                case CloseFrame.GOING_AWAY -> logger.info("The connection has been closed by the server.");
+                default -> logger.error(
+                        "The connection has been unexpectedly closed (code={}, reason={}).", code, reason);
+            }
+        }
+
+        @Override
+        public void onError(final @NotNull Exception ex) {
+            logger.error("An exception occurred in the websocket client.", ex);
+        }
     }
-  }
 }

@@ -23,23 +23,23 @@ import org.jetbrains.annotations.*;
 
 public final class TestEvent implements JavelinEvent {
 
-  private final String payload;
+    private final String payload;
 
-  public TestEvent(final String payload) {
-    this.payload = payload;
-  }
+    public TestEvent(final String payload) {
+        this.payload = payload;
+    }
 
-  public String getPayload() {
-    return payload;
-  }
+    public String getPayload() {
+        return payload;
+    }
 
-  @Override
-  public boolean equals(final @Nullable Object o) {
-    return this == o || (o instanceof TestEvent event && Objects.equals(payload, event.payload));
-  }
+    @Override
+    public boolean equals(final @Nullable Object o) {
+        return this == o || (o instanceof TestEvent event && Objects.equals(payload, event.payload));
+    }
 
-  @Override
-  public int hashCode() {
-    return payload.hashCode();
-  }
+    @Override
+    public int hashCode() {
+        return payload.hashCode();
+    }
 }

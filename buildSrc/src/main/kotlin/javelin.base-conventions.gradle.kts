@@ -88,6 +88,7 @@ indraSpotlessLicenser {
 
 spotless {
     java {
-        // palantirJavaFormat()
+        palantirJavaFormat()
+        formatAnnotations()
     }
 }

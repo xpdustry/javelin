@@ -21,6 +21,4 @@ package fr.xpdustry.javelin;
 /**
  * Tagging interface for defining Javelin events.
  */
-public interface JavelinEvent {
-
-}
+public interface JavelinEvent {}

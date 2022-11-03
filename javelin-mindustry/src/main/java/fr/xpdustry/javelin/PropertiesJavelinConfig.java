@@ -24,74 +24,70 @@ import org.jetbrains.annotations.*;
 
 final class PropertiesJavelinConfig implements JavelinConfig {
 
-  private static final String
-    SERVER_PORT_KEY = "fr.xpdustry.javelin.server.port",
-    CLIENT_USERNAME_KEY = "fr.xpdustry.javelin.client.username",
-    CLIENT_PASSWORD_KEY = "fr.xpdustry.javelin.client.password",
-    CLIENT_SERVER_URI_KEY = "fr.xpdustry.javelin.client.address",
-    MODE_KEY = "fr.xpdustry.javelin.socket.mode",
-    WORKERS_KEY = "fr.xpdustry.javelin.socket.workers",
-    ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections";
+    private static final String SERVER_PORT_KEY = "fr.xpdustry.javelin.server.port",
+            CLIENT_USERNAME_KEY = "fr.xpdustry.javelin.client.username",
+            CLIENT_PASSWORD_KEY = "fr.xpdustry.javelin.client.password",
+            CLIENT_SERVER_URI_KEY = "fr.xpdustry.javelin.client.address",
+            MODE_KEY = "fr.xpdustry.javelin.socket.mode",
+            WORKERS_KEY = "fr.xpdustry.javelin.socket.workers",
+            ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections";
 
-  private static final Properties DEFAULTS = new Properties();
+    private static final Properties DEFAULTS = new Properties();
 
-  static {
-    DEFAULTS.putAll(
-      Map.of(
-        SERVER_PORT_KEY, "8080",
-        CLIENT_USERNAME_KEY, "",
-        CLIENT_PASSWORD_KEY, "",
-        CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
-        MODE_KEY, "NONE",
-        WORKERS_KEY, "1",
-        ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false"
-      )
-    );
-  }
+    static {
+        DEFAULTS.putAll(Map.of(
+                SERVER_PORT_KEY, "8080",
+                CLIENT_USERNAME_KEY, "",
+                CLIENT_PASSWORD_KEY, "",
+                CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
+                MODE_KEY, "NONE",
+                WORKERS_KEY, "1",
+                ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false"));
+    }
 
-  private final Properties properties;
+    private final Properties properties;
 
-  PropertiesJavelinConfig(final @NotNull Properties properties) {
-    this.properties = new Properties(DEFAULTS);
-    this.properties.putAll(properties);
-  }
+    PropertiesJavelinConfig(final @NotNull Properties properties) {
+        this.properties = new Properties(DEFAULTS);
+        this.properties.putAll(properties);
+    }
 
-  static @NotNull Properties getDefaults() {
-    return DEFAULTS;
-  }
+    static @NotNull Properties getDefaults() {
+        return DEFAULTS;
+    }
 
-  @Override
-  public @NotNull Mode getMode() {
-    return Mode.valueOf(properties.getProperty(MODE_KEY));
-  }
+    @Override
+    public @NotNull Mode getMode() {
+        return Mode.valueOf(properties.getProperty(MODE_KEY));
+    }
 
-  @Override
-  public int getServerPort() {
-    return Integer.parseInt(properties.getProperty(SERVER_PORT_KEY));
-  }
+    @Override
+    public int getServerPort() {
+        return Integer.parseInt(properties.getProperty(SERVER_PORT_KEY));
+    }
 
-  @Override
-  public @NotNull String getClientUsername() {
-    return properties.getProperty(CLIENT_USERNAME_KEY);
-  }
+    @Override
+    public @NotNull String getClientUsername() {
+        return properties.getProperty(CLIENT_USERNAME_KEY);
+    }
 
-  @Override
-  public char @NotNull [] getClientPassword() {
-    return properties.getProperty(CLIENT_PASSWORD_KEY).toCharArray();
-  }
+    @Override
+    public char @NotNull [] getClientPassword() {
+        return properties.getProperty(CLIENT_PASSWORD_KEY).toCharArray();
+    }
 
-  @Override
-  public @NotNull URI getClientServerUri() {
-    return URI.create(properties.getProperty(CLIENT_SERVER_URI_KEY));
-  }
+    @Override
+    public @NotNull URI getClientServerUri() {
+        return URI.create(properties.getProperty(CLIENT_SERVER_URI_KEY));
+    }
 
-  @Override
-  public int getWorkerCount() {
-    return Integer.parseInt(properties.getProperty(WORKERS_KEY));
-  }
+    @Override
+    public int getWorkerCount() {
+        return Integer.parseInt(properties.getProperty(WORKERS_KEY));
+    }
 
-  @Override
-  public boolean alwaysAllowLocalConnections() {
-    return Boolean.parseBoolean(properties.getProperty(ALWAYS_ALLOW_LOCAL_CONNECTIONS));
-  }
+    @Override
+    public boolean alwaysAllowLocalConnections() {
+        return Boolean.parseBoolean(properties.getProperty(ALWAYS_ALLOW_LOCAL_CONNECTIONS));
+    }
 }

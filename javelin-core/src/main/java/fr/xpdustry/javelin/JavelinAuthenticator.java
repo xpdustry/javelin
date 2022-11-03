@@ -23,5 +23,5 @@ import org.jetbrains.annotations.*;
 @FunctionalInterface
 public interface JavelinAuthenticator {
 
-  boolean authenticate(final @NotNull String username, final char @NotNull [] password);
+    boolean authenticate(final @NotNull String username, final char @NotNull [] password);
 }
