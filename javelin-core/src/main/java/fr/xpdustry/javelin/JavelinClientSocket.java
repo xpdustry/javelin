@@ -33,8 +33,6 @@ import org.slf4j.*;
 
 final class JavelinClientSocket extends AbstractJavelinSocket {
 
-    private static final Logger logger = LoggerFactory.getLogger(JavelinClientSocket.class);
-
     private final AtomicBoolean connecting = new AtomicBoolean();
     private final ExecutorService executor;
     private final JavelinClientWebSocket socket;

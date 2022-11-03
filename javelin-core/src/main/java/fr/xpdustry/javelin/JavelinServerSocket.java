@@ -35,8 +35,6 @@ import org.slf4j.*;
 
 final class JavelinServerSocket extends AbstractJavelinSocket {
 
-    private static final Logger logger = LoggerFactory.getLogger(JavelinServerSocket.class);
-
     private final JavelinServerWebSocket socket;
     private final boolean alwaysAllowLocalConnections;
 

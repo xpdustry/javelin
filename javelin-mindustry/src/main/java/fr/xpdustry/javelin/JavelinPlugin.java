@@ -34,7 +34,8 @@ public final class JavelinPlugin extends Plugin {
     private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
     private static final File USERS_FILE = new File(DIRECTORY, "users.bin.gz");
 
-    private static UserAuthenticator authenticator = new SimpleUserAuthenticator(USERS_FILE);
+    private static UserAuthenticator authenticator =
+            new SimpleUserAuthenticator(new File(DIRECTORY, "users.bin.gz").toPath());
 
     @SuppressWarnings("NullAway.Init")
     private static JavelinConfig config;

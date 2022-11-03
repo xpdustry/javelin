@@ -26,12 +26,14 @@ import java.nio.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import net.kyori.event.*;
+import org.checkerframework.checker.nullness.qual.*;
 import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 abstract class AbstractJavelinSocket implements JavelinSocket {
 
-    private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
+    protected final Logger logger = LoggerFactory.getLogger(this.getClass());
+    private final EventBus<JavelinEvent> bus = new SimpleEventBus<>(JavelinEvent.class);
     private final Kryo kryo = new Kryo();
 
     {
@@ -60,7 +62,9 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     @Override
     public @NotNull <E extends JavelinEvent> Subscription subscribe(
             final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber) {
-        return bus.subscribe(event, subscriber::accept)::unsubscribe;
+        final var forwarded = new ForwardingEventSubscriber<>(subscriber);
+        bus.register(event, forwarded);
+        return () -> bus.unregister(forwarded);
     }
 
     protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
@@ -73,7 +77,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
             }
             @SuppressWarnings("unchecked")
             final var clazz = (Class<? extends JavelinEvent>) registration.getType();
-            if (bus.subscribed(clazz)) {
+            if (bus.hasSubscribers(clazz)) {
                 bus.post(kryo.readObject(input, clazz)).exceptions().forEach((s, t) -> getLogger()
                         .error("An exception occurred while handling an event in " + s, t));
             }
@@ -81,4 +85,18 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     }
 
     protected abstract Logger getLogger();
+
+    private static final class ForwardingEventSubscriber<E> implements EventSubscriber<E> {
+
+        private final Consumer<E> consumer;
+
+        private ForwardingEventSubscriber(final Consumer<E> consumer) {
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void invoke(final @NonNull E event) {
+            this.consumer.accept(event);
+        }
+    }
 }

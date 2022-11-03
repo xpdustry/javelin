@@ -29,7 +29,6 @@ public interface UserAuthenticator extends JavelinAuthenticator {
 
     long countUsers();
 
-    @Unmodifiable
     @NotNull List<String> findAllUsers();
 
     void deleteUser(final @NotNull String username);
