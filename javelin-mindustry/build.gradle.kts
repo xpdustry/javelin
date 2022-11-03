@@ -29,10 +29,11 @@ toxopid {
     platforms.add(ModPlatform.HEADLESS)
 }
 
-val relocate = tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocate") {
-    target = tasks.shadowJar.get()
-    prefix = "fr.xpdustry.javelin.shadow" // Default value is "shadow"
-}
+val relocate =
+    tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocate") {
+        target = tasks.shadowJar.get()
+        prefix = "fr.xpdustry.javelin.shadow" // Default value is "shadow"
+    }
 
 tasks.shadowJar {
     dependsOn(relocate)

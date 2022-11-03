@@ -18,12 +18,12 @@
  */
 package fr.xpdustry.javelin;
 
-import static org.assertj.core.api.Assertions.*;
-
 import java.net.*;
 import java.time.*;
 import java.util.concurrent.*;
 import org.junit.jupiter.api.*;
+
+import static org.assertj.core.api.Assertions.*;
 
 public final class JavelinServerSocketTest {
 

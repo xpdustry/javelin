@@ -140,7 +140,8 @@ public final class BanSynchronizer extends Plugin {
 }
 ```
 
-More info in the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-core/latest).
+More info in
+the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-core/latest).
 
 ### JavaScript
 
