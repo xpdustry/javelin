@@ -20,7 +20,6 @@ package fr.xpdustry.javelin;
 
 import java.net.*;
 import java.util.*;
-import org.jetbrains.annotations.*;
 
 final class PropertiesJavelinConfig implements JavelinConfig {
 
@@ -47,17 +46,17 @@ final class PropertiesJavelinConfig implements JavelinConfig {
 
     private final Properties properties;
 
-    PropertiesJavelinConfig(final @NotNull Properties properties) {
+    PropertiesJavelinConfig(final Properties properties) {
         this.properties = new Properties(DEFAULTS);
         this.properties.putAll(properties);
     }
 
-    static @NotNull Properties getDefaults() {
+    static Properties getDefaults() {
         return DEFAULTS;
     }
 
     @Override
-    public @NotNull Mode getMode() {
+    public Mode getMode() {
         return Mode.valueOf(properties.getProperty(MODE_KEY));
     }
 
@@ -67,17 +66,17 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     }
 
     @Override
-    public @NotNull String getClientUsername() {
+    public String getClientUsername() {
         return properties.getProperty(CLIENT_USERNAME_KEY);
     }
 
     @Override
-    public char @NotNull [] getClientPassword() {
+    public char[] getClientPassword() {
         return properties.getProperty(CLIENT_PASSWORD_KEY).toCharArray();
     }
 
     @Override
-    public @NotNull URI getClientServerUri() {
+    public URI getClientServerUri() {
         return URI.create(properties.getProperty(CLIENT_SERVER_URI_KEY));
     }
 

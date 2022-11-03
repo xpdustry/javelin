@@ -26,8 +26,6 @@ import java.nio.*;
 import java.util.concurrent.*;
 import java.util.function.*;
 import net.kyori.event.*;
-import org.checkerframework.checker.nullness.qual.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 abstract class AbstractJavelinSocket implements JavelinSocket {
@@ -44,7 +42,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     }
 
     @Override
-    public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final @NotNull E event) {
+    public <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final E event) {
         if (this.getStatus() != Status.OPEN) {
             return CompletableFuture.failedFuture(new IOException("The socket is not open."));
         } else {
@@ -60,16 +58,15 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     }
 
     @Override
-    public @NotNull <E extends JavelinEvent> Subscription subscribe(
-            final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber) {
+    public <E extends JavelinEvent> Subscription subscribe(final Class<E> event, final Consumer<E> subscriber) {
         final var forwarded = new ForwardingEventSubscriber<>(subscriber);
         bus.register(event, forwarded);
         return () -> bus.unregister(forwarded);
     }
 
-    protected abstract void onEventSend(final @NotNull ByteBuffer buffer);
+    protected abstract void onEventSend(final ByteBuffer buffer);
 
-    protected void onEventReceive(final @NotNull ByteBuffer buffer) {
+    protected void onEventReceive(final ByteBuffer buffer) {
         try (final var input = new ByteBufferInput(buffer)) {
             final var registration = kryo.readClass(input);
             if (registration == null) {
@@ -94,8 +91,9 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
             this.consumer = consumer;
         }
 
+        @SuppressWarnings("NullableProblems")
         @Override
-        public void invoke(final @NonNull E event) {
+        public void invoke(final E event) {
             this.consumer.accept(event);
         }
     }

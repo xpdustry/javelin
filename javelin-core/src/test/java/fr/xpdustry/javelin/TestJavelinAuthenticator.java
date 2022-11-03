@@ -19,14 +19,13 @@
 package fr.xpdustry.javelin;
 
 import java.util.*;
-import org.jetbrains.annotations.*;
 
 public final class TestJavelinAuthenticator implements JavelinAuthenticator {
 
     private final Map<String, char[]> users = new HashMap<>();
 
     @Override
-    public boolean authenticate(final @NotNull String username, char @NotNull [] password) {
+    public boolean authenticate(final String username, char[] password) {
         return users.containsKey(username) && Arrays.equals(users.get(username), password);
     }
 

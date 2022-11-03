@@ -19,7 +19,7 @@
 package fr.xpdustry.javelin;
 
 import java.util.*;
-import org.jetbrains.annotations.*;
+import org.checkerframework.checker.nullness.qual.*;
 
 public final class TestEvent implements JavelinEvent {
 

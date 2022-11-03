@@ -25,10 +25,10 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import org.checkerframework.checker.nullness.qual.*;
 import org.java_websocket.client.*;
 import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 final class JavelinClientSocket extends AbstractJavelinSocket {
@@ -37,14 +37,13 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
     private final ExecutorService executor;
     private final JavelinClientWebSocket socket;
 
-    JavelinClientSocket(
-            final @NotNull URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
+    JavelinClientSocket(final URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
         this.executor = Executors.newFixedThreadPool(workers);
         this.socket = new JavelinClientWebSocket(serverUri, authentication);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> start() {
+    public CompletableFuture<Void> start() {
         if (getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
@@ -67,7 +66,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> restart() {
+    public CompletableFuture<Void> restart() {
         if (getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
@@ -90,7 +89,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> close() {
+    public CompletableFuture<Void> close() {
         if (getStatus() == Status.OPEN) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
@@ -111,12 +110,12 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    protected void onEventSend(final @NotNull ByteBuffer buffer) {
+    protected void onEventSend(final ByteBuffer buffer) {
         socket.send(buffer);
     }
 
     @Override
-    public @NotNull Status getStatus() {
+    public Status getStatus() {
         if (connecting.get()) {
             return Status.OPENING;
         }
@@ -151,22 +150,22 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public void onOpen(final @NotNull ServerHandshake handshake) {
+        public void onOpen(final ServerHandshake handshake) {
             logger.info("The connection has been successfully established with the server.");
         }
 
         @Override
-        public void onMessage(final @NotNull String message) {
+        public void onMessage(final String message) {
             logger.info("Received text message, ignoring (message={}).", message);
         }
 
         @Override
-        public void onMessage(final @NotNull ByteBuffer bytes) {
+        public void onMessage(final ByteBuffer bytes) {
             executor.execute(() -> onEventReceive(bytes));
         }
 
         @Override
-        public void onClose(final int code, final @NotNull String reason, final boolean remote) {
+        public void onClose(final int code, final String reason, final boolean remote) {
             switch (code) {
                 case CloseFrame.NORMAL -> logger.info("The connection has been closed.");
                 case CloseFrame.GOING_AWAY -> logger.info("The connection has been closed by the server.");
@@ -176,7 +175,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public void onError(final @NotNull Exception ex) {
+        public void onError(final Exception ex) {
             logger.error("An exception occurred in the websocket client.", ex);
         }
     }

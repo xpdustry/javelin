@@ -18,20 +18,24 @@
  */
 package fr.xpdustry.javelin;
 
+import java.nio.file.*;
 import java.util.*;
-import org.jetbrains.annotations.*;
 
 public interface UserAuthenticator extends JavelinAuthenticator {
 
-    void saveUser(final @NotNull String username, final char @NotNull [] password);
+    static UserAuthenticator create(final Path path) {
+        return new SimpleUserAuthenticator(path);
+    }
 
-    boolean existsUser(final @NotNull String username);
+    void saveUser(final String username, final char[] password);
+
+    boolean existsUser(final String username);
 
     long countUsers();
 
-    @NotNull List<String> findAllUsers();
+    List<String> findAllUsers();
 
-    void deleteUser(final @NotNull String username);
+    void deleteUser(final String username);
 
     void deleteAllUsers();
 }

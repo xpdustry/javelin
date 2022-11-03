@@ -18,10 +18,9 @@
  */
 package fr.xpdustry.javelin;
 
-import org.jetbrains.annotations.*;
-
 @FunctionalInterface
 public interface JavelinAuthenticator {
 
-    boolean authenticate(final @NotNull String username, final char @NotNull [] password);
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    boolean authenticate(final String username, final char[] password);
 }

@@ -26,7 +26,7 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.zip.*;
-import org.jetbrains.annotations.*;
+import org.checkerframework.checker.nullness.qual.*;
 
 /**
  * Simple user authenticator.
@@ -37,7 +37,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     private final BcryptFunction bcrypt = BcryptFunction.getInstance(Bcrypt.B, 12);
     private final Path path;
 
-    SimpleUserAuthenticator(final @NotNull Path path) {
+    SimpleUserAuthenticator(final Path path) {
         this.path = path;
 
         if (Files.exists(path)) {
@@ -57,19 +57,20 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     }
 
     @Override
-    public boolean authenticate(final @NotNull String username, final char @NotNull [] password) {
+    public boolean authenticate(final String username, final char[] password) {
         final var hashed = users.get(username);
         return hashed != null && hashed.equals(getHashedPassword(password, hashed.salt));
     }
 
     @Override
-    public void saveUser(final @NotNull String username, final char @NotNull [] password) {
-        users.put(username, getHashedPassword(password, new String(SaltGenerator.generate(), StandardCharsets.UTF_8)));
+    public void saveUser(final String username, final char[] password) {
+        final var salt = new String(SaltGenerator.generate(), StandardCharsets.UTF_8);
+        users.put(username, getHashedPassword(password, salt));
         save();
     }
 
     @Override
-    public boolean existsUser(final @NotNull String username) {
+    public boolean existsUser(final String username) {
         return users.containsKey(username);
     }
 
@@ -79,12 +80,12 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     }
 
     @Override
-    public @NotNull @Unmodifiable List<String> findAllUsers() {
+    public List<String> findAllUsers() {
         return List.copyOf(users.keySet());
     }
 
     @Override
-    public void deleteUser(final @NotNull String username) {
+    public void deleteUser(final String username) {
         if (users.remove(username) != null) {
             save();
         }
@@ -110,8 +111,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
         }
     }
 
-    private @NotNull SimpleUserAuthenticator.HashedPassword getHashedPassword(
-            final char[] password, final String salt) {
+    private SimpleUserAuthenticator.HashedPassword getHashedPassword(final char[] password, final String salt) {
         final var hash = bcrypt.hash(new SecureString(password), salt);
         return new HashedPassword(hash.getBytes(), salt);
     }

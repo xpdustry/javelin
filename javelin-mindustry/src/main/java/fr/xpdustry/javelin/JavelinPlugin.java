@@ -26,35 +26,33 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 import mindustry.mod.*;
-import org.jetbrains.annotations.*;
+import org.checkerframework.checker.nullness.qual.*;
 
 public final class JavelinPlugin extends Plugin {
 
     private static final File DIRECTORY = new File("javelin");
     private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
-    private static final File USERS_FILE = new File(DIRECTORY, "users.bin.gz");
 
     private static UserAuthenticator authenticator =
-            new SimpleUserAuthenticator(new File(DIRECTORY, "users.bin.gz").toPath());
+            UserAuthenticator.create(new File(DIRECTORY, "users.bin.gz").toPath());
 
-    @SuppressWarnings("NullAway.Init")
-    private static JavelinConfig config;
+    private static @MonotonicNonNull JavelinConfig config = null;
 
     private static JavelinSocket socket = JavelinSocket.noop();
 
-    public static @NotNull UserAuthenticator getUserAuthenticator() {
+    public static UserAuthenticator getUserAuthenticator() {
         return authenticator;
     }
 
-    public static void setUserAuthenticator(final @NotNull UserAuthenticator authenticator) {
+    public static void setUserAuthenticator(final UserAuthenticator authenticator) {
         JavelinPlugin.authenticator = authenticator;
     }
 
-    public static @NotNull JavelinConfig getJavelinConfig() {
+    public static JavelinConfig getJavelinConfig() {
         return config;
     }
 
-    public static @NotNull JavelinSocket getJavelinSocket() {
+    public static JavelinSocket getJavelinSocket() {
         return socket;
     }
 
@@ -87,7 +85,7 @@ public final class JavelinPlugin extends Plugin {
     }
 
     @Override
-    public void registerServerCommands(final @NotNull CommandHandler handler) {
+    public void registerServerCommands(final CommandHandler handler) {
         handler.register("javelin-user-add", "<username> <password>", "Add a new user to the server.", args -> {
             if (authenticator.existsUser(args[0])) {
                 Log.info("The user " + args[0] + " has been override.");
@@ -131,7 +129,7 @@ public final class JavelinPlugin extends Plugin {
         });
     }
 
-    private @NotNull JavelinConfig readConfig() {
+    private JavelinConfig readConfig() {
         final var properties = new Properties();
         if (CONFIG_FILE.exists()) {
             try (final var reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
@@ -154,7 +152,7 @@ public final class JavelinPlugin extends Plugin {
         private final JavelinSocket socket;
         private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
 
-        private JavelinApplicationListener(final @NotNull JavelinSocket socket) {
+        private JavelinApplicationListener(final JavelinSocket socket) {
             this.socket = socket;
         }
 

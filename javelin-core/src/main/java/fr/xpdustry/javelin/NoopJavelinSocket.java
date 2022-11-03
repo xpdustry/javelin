@@ -20,7 +20,6 @@ package fr.xpdustry.javelin;
 
 import java.util.concurrent.*;
 import java.util.function.*;
-import org.jetbrains.annotations.*;
 
 final class NoopJavelinSocket implements JavelinSocket {
 
@@ -29,33 +28,32 @@ final class NoopJavelinSocket implements JavelinSocket {
     private NoopJavelinSocket() {}
 
     @Override
-    public @NotNull CompletableFuture<Void> start() {
+    public CompletableFuture<Void> start() {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> restart() {
+    public CompletableFuture<Void> restart() {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> close() {
+    public CompletableFuture<Void> close() {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public @NotNull <E extends JavelinEvent> CompletableFuture<Void> sendEvent(@NotNull E event) {
+    public <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final E event) {
         return CompletableFuture.completedFuture(null);
     }
 
     @Override
-    public @NotNull <E extends JavelinEvent> Subscription subscribe(
-            @NotNull Class<E> event, @NotNull Consumer<E> subscriber) {
+    public <E extends JavelinEvent> Subscription subscribe(final Class<E> event, final Consumer<E> subscriber) {
         return () -> {};
     }
 
     @Override
-    public @NotNull Status getStatus() {
+    public Status getStatus() {
         return Status.CLOSED;
     }
 }

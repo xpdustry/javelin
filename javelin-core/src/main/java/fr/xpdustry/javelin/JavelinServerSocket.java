@@ -24,13 +24,13 @@ import java.nio.charset.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.*;
+import org.checkerframework.checker.nullness.qual.*;
 import org.java_websocket.*;
 import org.java_websocket.drafts.*;
 import org.java_websocket.exceptions.*;
 import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
 import org.java_websocket.server.*;
-import org.jetbrains.annotations.*;
 import org.slf4j.*;
 
 final class JavelinServerSocket extends AbstractJavelinSocket {
@@ -42,13 +42,13 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
             final int port,
             final int workers,
             final boolean alwaysAllowLocalConnections,
-            final @NotNull JavelinAuthenticator authenticator) {
+            final JavelinAuthenticator authenticator) {
         this.socket = new JavelinServerWebSocket(port, workers, authenticator);
         this.alwaysAllowLocalConnections = alwaysAllowLocalConnections;
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> start() {
+    public CompletableFuture<Void> start() {
         if (socket.status.compareAndSet(Status.CLOSED, Status.OPENING)) {
             try {
                 socket.start();
@@ -62,7 +62,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    public @NotNull CompletableFuture<Void> close() {
+    public CompletableFuture<Void> close() {
         if (socket.status.get() == Status.OPEN) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
@@ -80,13 +80,13 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     }
 
     @Override
-    protected void onEventSend(final @NotNull ByteBuffer buffer) {
+    protected void onEventSend(final ByteBuffer buffer) {
         socket.broadcast(buffer);
     }
 
     @SuppressWarnings("NullAway")
     @Override
-    public @NotNull Status getStatus() {
+    public Status getStatus() {
         return socket.status.get();
     }
 
@@ -101,8 +101,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         private final CompletableFuture<Void> startFuture = new CompletableFuture<>();
         private final JavelinAuthenticator authenticator;
 
-        private JavelinServerWebSocket(
-                final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+        private JavelinServerWebSocket(final int port, final int workers, final JavelinAuthenticator authenticator) {
             super(new InetSocketAddress(port), workers, Collections.singletonList(Internal.getJavelinDraft()));
             this.authenticator = authenticator;
             this.setReuseAddr(true);
@@ -117,9 +116,8 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public @NotNull ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(
-                final @NotNull WebSocket conn, final @NotNull Draft draft, final @NotNull ClientHandshake request)
-                throws InvalidDataException {
+        public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(
+                final WebSocket conn, final Draft draft, final ClientHandshake request) throws InvalidDataException {
             final var authorization = request.getFieldValue(Internal.AUTHORIZATION_HEADER);
             final var matcher = Internal.AUTHORIZATION_PATTERN.matcher(authorization);
 
@@ -163,13 +161,12 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public void onOpen(final @NotNull WebSocket conn, final @NotNull ClientHandshake handshake) {
+        public void onOpen(final WebSocket conn, final ClientHandshake handshake) {
             logger.info("{} has connected.", conn.getRemoteSocketAddress());
         }
 
         @Override
-        public void onClose(
-                final @NotNull WebSocket conn, final int code, final @NotNull String reason, final boolean remote) {
+        public void onClose(final WebSocket conn, final int code, final String reason, final boolean remote) {
             switch (code) {
                 case CloseFrame.NORMAL, CloseFrame.GOING_AWAY -> logger.info(
                         "The connection {} has been closed.", conn.getRemoteSocketAddress());
@@ -182,13 +179,13 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public void onMessage(final @NotNull WebSocket conn, final @NotNull String message) {
+        public void onMessage(final WebSocket conn, final String message) {
             logger.debug(
                     "Received text message from {}, ignoring (message={}).", conn.getRemoteSocketAddress(), message);
         }
 
         @Override
-        public void onMessage(final @NotNull WebSocket conn, final @NotNull ByteBuffer message) {
+        public void onMessage(final WebSocket conn, final ByteBuffer message) {
             final var receivers = new ArrayList<>(this.getConnections());
             receivers.remove(conn);
             broadcast(message, receivers);
@@ -196,7 +193,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         }
 
         @Override
-        public void onError(final @Nullable WebSocket conn, final @NotNull Exception ex) {
+        public void onError(final @Nullable WebSocket conn, final Exception ex) {
             if (!startFuture.isDone()) {
                 status.set(Status.CLOSED);
                 startFuture.completeExceptionally(ex);
@@ -209,8 +206,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
             }
         }
 
-        private void rejectConnection(final @NotNull WebSocket conn, final @NotNull String reason)
-                throws InvalidDataException {
+        private void rejectConnection(final WebSocket conn, final String reason) throws InvalidDataException {
             logger.info("Rejected connection from {}: {}", conn.getRemoteSocketAddress(), reason);
             throw new InvalidDataException(CloseFrame.POLICY_VALIDATION, reason);
         }

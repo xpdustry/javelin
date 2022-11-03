@@ -19,19 +19,18 @@
 package fr.xpdustry.javelin;
 
 import java.net.*;
-import org.jetbrains.annotations.*;
 
 public interface JavelinConfig {
 
-    @NotNull Mode getMode();
+    Mode getMode();
 
     int getServerPort();
 
-    @NotNull String getClientUsername();
+    String getClientUsername();
 
-    char @NotNull [] getClientPassword();
+    char[] getClientPassword();
 
-    @NotNull URI getClientServerUri();
+    URI getClientServerUri();
 
     int getWorkerCount();
 

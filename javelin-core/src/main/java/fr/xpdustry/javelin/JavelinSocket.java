@@ -21,53 +21,46 @@ package fr.xpdustry.javelin;
 import java.net.*;
 import java.util.concurrent.*;
 import java.util.function.*;
-import org.jetbrains.annotations.*;
 
 public interface JavelinSocket {
 
-    static @NotNull JavelinSocket server(
-            final int port, final int workers, final @NotNull JavelinAuthenticator authenticator) {
+    static JavelinSocket server(final int port, final int workers, final JavelinAuthenticator authenticator) {
         return new JavelinServerSocket(port, workers, false, authenticator);
     }
 
-    static @NotNull JavelinSocket server(
+    static JavelinSocket server(
             final int port,
             final int workers,
             boolean alwaysAllowLocalConnections,
-            final @NotNull JavelinAuthenticator authenticator) {
+            final JavelinAuthenticator authenticator) {
         return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator);
     }
 
-    static @NotNull JavelinSocket client(
-            final @NotNull URI serverUri,
-            final @NotNull String username,
-            final char @NotNull [] password,
-            final int workers) {
+    static JavelinSocket client(final URI serverUri, final String username, final char[] password, final int workers) {
         return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password));
     }
 
-    static @NotNull JavelinSocket client(final @NotNull URI serverUri, final int workers) {
+    static JavelinSocket client(final URI serverUri, final int workers) {
         return new JavelinClientSocket(serverUri, workers, null);
     }
 
-    static @NotNull JavelinSocket noop() {
+    static JavelinSocket noop() {
         return NoopJavelinSocket.INSTANCE;
     }
 
-    @NotNull CompletableFuture<Void> start();
+    CompletableFuture<Void> start();
 
-    default @NotNull CompletableFuture<Void> restart() {
+    default CompletableFuture<Void> restart() {
         return CompletableFuture.failedFuture(new UnsupportedOperationException());
     }
 
-    @NotNull CompletableFuture<Void> close();
+    CompletableFuture<Void> close();
 
-    <E extends JavelinEvent> @NotNull CompletableFuture<Void> sendEvent(final @NotNull E event);
+    <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final E event);
 
-    <E extends JavelinEvent> @NotNull Subscription subscribe(
-            final @NotNull Class<E> event, final @NotNull Consumer<E> subscriber);
+    <E extends JavelinEvent> Subscription subscribe(final Class<E> event, final Consumer<E> subscriber);
 
-    @NotNull Status getStatus();
+    Status getStatus();
 
     enum Status {
         OPENING,
