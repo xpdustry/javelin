@@ -38,6 +38,10 @@ public interface JavelinConfig {
         return false;
     }
 
+    default boolean isAutoRestartEnabled() {
+        return true;
+    }
+
     enum Mode {
         NONE,
         SERVER,

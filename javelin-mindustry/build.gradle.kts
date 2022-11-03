@@ -21,7 +21,7 @@ repositories {
 dependencies {
     api(project(":javelin-core"))
     mindustryDependencies()
-    runtimeOnly("org.slf4j:slf4j-simple:1.7.36")
+    runtimeOnly("org.slf4j:slf4j-simple:2.0.3")
 }
 
 toxopid {
@@ -29,15 +29,7 @@ toxopid {
     platforms.add(ModPlatform.HEADLESS)
 }
 
-val relocate =
-    tasks.register<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocate") {
-        target = tasks.shadowJar.get()
-        prefix = "fr.xpdustry.javelin.shadow" // Default value is "shadow"
-    }
-
 tasks.shadowJar {
-    dependsOn(relocate)
-    minimize()
     doFirst {
         val temp = temporaryDir.resolve("plugin.json")
         temp.writeText(metadata.toJson(true))
@@ -46,6 +38,14 @@ tasks.shadowJar {
     from(rootProject.file("LICENSE.md")) {
         into("META-INF")
     }
+    val target = "fr.xpdustry.javelin.shadow"
+    relocate("com.google.common", "$target.google.common")
+    relocate("org.java_websocket", "$target.java_websocket")
+    relocate("net.kyori.event", "$target.event")
+    relocate("org.slf4j", "$target.slf4j")
+    relocate("com.esotericsoftware.kryo", "$target.kryo")
+    relocate("com.password4j", "$target.password4j")
+    minimize()
 }
 
 // For plugin publishing

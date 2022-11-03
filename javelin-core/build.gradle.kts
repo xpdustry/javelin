@@ -3,10 +3,13 @@ plugins {
 }
 
 dependencies {
-    implementation("net.kyori:event-api:3.0.0")
+    implementation("net.kyori:event-api:3.0.0") {
+        exclude("org.checkerframework", "checker-qual")
+    }
     implementation("org.java-websocket:Java-WebSocket:1.5.3")
+    implementation("org.slf4j:slf4j-api:2.0.3")
     implementation("com.esotericsoftware.kryo:kryo5:5.3.0")
     implementation("com.password4j:password4j:1.6.2")
-    testRuntimeOnly("org.slf4j:slf4j-simple:1.7.36")
+    testRuntimeOnly("org.slf4j:slf4j-simple:2.0.3")
     testImplementation("org.assertj:assertj-core:3.23.1")
 }

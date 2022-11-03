@@ -34,7 +34,7 @@ public final class JavelinPlugin extends Plugin {
     private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
 
     private static UserAuthenticator authenticator =
-            UserAuthenticator.create(new File(DIRECTORY, "users.bin.gz").toPath());
+            UserAuthenticator.create(new File(DIRECTORY, "users-v2.bin.gz").toPath());
 
     private static @MonotonicNonNull JavelinConfig config = null;
 
@@ -81,7 +81,9 @@ public final class JavelinPlugin extends Plugin {
             }
         }
 
-        Core.app.addListener(new JavelinApplicationListener(socket));
+        if (config.isAutoRestartEnabled()) {
+            Core.app.addListener(new JavelinApplicationListener(socket));
+        }
     }
 
     @Override
@@ -126,6 +128,11 @@ public final class JavelinPlugin extends Plugin {
             Log.info(
                     "The javelin socket is currently @.",
                     socket.getStatus().name().toLowerCase(Locale.ROOT));
+        });
+
+        handler.register("javelin-restart", "Restarts the Javelin socket.", args -> {
+            Log.info("The javelin socket will be restarted.");
+            socket.restart();
         });
     }
 

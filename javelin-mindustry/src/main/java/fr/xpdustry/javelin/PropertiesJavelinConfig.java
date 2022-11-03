@@ -29,7 +29,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
             CLIENT_SERVER_URI_KEY = "fr.xpdustry.javelin.client.address",
             MODE_KEY = "fr.xpdustry.javelin.socket.mode",
             WORKERS_KEY = "fr.xpdustry.javelin.socket.workers",
-            ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections";
+            ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections",
+            AUTO_RESTART = "fr.xpdustry.javelin.socket.auto-restart";
 
     private static final Properties DEFAULTS = new Properties();
 
@@ -41,7 +42,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
                 CLIENT_SERVER_URI_KEY, "ws://localhost:8080",
                 MODE_KEY, "NONE",
                 WORKERS_KEY, "1",
-                ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false"));
+                ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false",
+                AUTO_RESTART, "true"));
     }
 
     private final Properties properties;
@@ -88,5 +90,10 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     @Override
     public boolean alwaysAllowLocalConnections() {
         return Boolean.parseBoolean(properties.getProperty(ALWAYS_ALLOW_LOCAL_CONNECTIONS));
+    }
+
+    @Override
+    public boolean isAutoRestartEnabled() {
+        return Boolean.parseBoolean(properties.getProperty(AUTO_RESTART));
     }
 }

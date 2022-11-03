@@ -21,7 +21,6 @@ package fr.xpdustry.javelin;
 import com.password4j.*;
 import com.password4j.types.*;
 import java.io.*;
-import java.nio.charset.*;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.*;
@@ -33,11 +32,15 @@ import org.checkerframework.checker.nullness.qual.*;
  */
 final class SimpleUserAuthenticator implements UserAuthenticator {
 
-    private final Map<String, HashedPassword> users = new ConcurrentHashMap<>();
+    final Map<String, HashedPassword> users = new ConcurrentHashMap<>();
     private final BcryptFunction bcrypt = BcryptFunction.getInstance(Bcrypt.B, 12);
     private final Path path;
 
     SimpleUserAuthenticator(final Path path) {
+        if (!path.getFileName().toString().endsWith("bin.gz")) {
+            throw new IllegalArgumentException(
+                    "Unsupported file extension: expected file.bin.gz, got " + path.getFileName());
+        }
         this.path = path;
 
         if (Files.exists(path)) {
@@ -64,8 +67,7 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
 
     @Override
     public void saveUser(final String username, final char[] password) {
-        final var salt = new String(SaltGenerator.generate(), StandardCharsets.UTF_8);
-        users.put(username, getHashedPassword(password, salt));
+        users.put(username, getHashedPassword(password));
         save();
     }
 
@@ -114,6 +116,11 @@ final class SimpleUserAuthenticator implements UserAuthenticator {
     private SimpleUserAuthenticator.HashedPassword getHashedPassword(final char[] password, final String salt) {
         final var hash = bcrypt.hash(new SecureString(password), salt);
         return new HashedPassword(hash.getBytes(), salt);
+    }
+
+    private SimpleUserAuthenticator.HashedPassword getHashedPassword(final char[] password) {
+        final var hash = bcrypt.hash(new SecureString(password));
+        return new HashedPassword(hash.getBytes(), hash.getSalt());
     }
 
     private static final class HashedPassword {
