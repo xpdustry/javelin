@@ -31,7 +31,7 @@ import org.slf4j.*;
 abstract class AbstractJavelinSocket implements JavelinSocket {
 
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
-    private final EventBus<JavelinEvent> bus = new SimpleEventBus<>(JavelinEvent.class);
+    private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
     private final Kryo kryo = new Kryo();
 
     {
@@ -59,9 +59,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
 
     @Override
     public <E extends JavelinEvent> Subscription subscribe(final Class<E> event, final Consumer<E> subscriber) {
-        final var forwarded = new ForwardingEventSubscriber<>(subscriber);
-        bus.register(event, forwarded);
-        return () -> bus.unregister(forwarded);
+        return bus.subscribe(event, subscriber::accept)::unsubscribe;
     }
 
     protected abstract void onEventSend(final ByteBuffer buffer);
@@ -74,27 +72,11 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
             }
             @SuppressWarnings("unchecked")
             final var clazz = (Class<? extends JavelinEvent>) registration.getType();
-            if (bus.hasSubscribers(clazz)) {
-                bus.post(kryo.readObject(input, clazz)).exceptions().forEach((s, t) -> getLogger()
-                        .error("An exception occurred while handling an event in " + s, t));
+            if (bus.subscribed(clazz)) {
+                bus.post(kryo.readObject(input, clazz))
+                        .exceptions()
+                        .forEach((s, t) -> logger.error("An exception occurred while handling an event in " + s, t));
             }
-        }
-    }
-
-    protected abstract Logger getLogger();
-
-    private static final class ForwardingEventSubscriber<E> implements EventSubscriber<E> {
-
-        private final Consumer<E> consumer;
-
-        private ForwardingEventSubscriber(final Consumer<E> consumer) {
-            this.consumer = consumer;
-        }
-
-        @SuppressWarnings("NullableProblems")
-        @Override
-        public void invoke(final E event) {
-            this.consumer.accept(event);
         }
     }
 }

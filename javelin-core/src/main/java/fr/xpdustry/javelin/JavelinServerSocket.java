@@ -31,7 +31,6 @@ import org.java_websocket.exceptions.*;
 import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
 import org.java_websocket.server.*;
-import org.slf4j.*;
 
 final class JavelinServerSocket extends AbstractJavelinSocket {
 
@@ -88,11 +87,6 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
     @Override
     public Status getStatus() {
         return socket.status.get();
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return logger;
     }
 
     private final class JavelinServerWebSocket extends WebSocketServer {

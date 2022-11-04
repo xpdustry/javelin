@@ -10,6 +10,7 @@ plugins {
 
 repositories {
     mavenCentral()
+    sonatype.ossSnapshots()
 }
 
 dependencies {
@@ -18,7 +19,7 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
 
     // Static analysis
-    compileOnly("org.checkerframework:checker-qual:3.26.0")
+    compileOnlyApi("org.checkerframework:checker-qual:3.26.0")
     testCompileOnly("org.checkerframework:checker-qual:3.26.0")
     annotationProcessor("com.uber.nullaway:nullaway:0.9.7")
     errorprone("com.google.errorprone:error_prone_core:2.13.1")

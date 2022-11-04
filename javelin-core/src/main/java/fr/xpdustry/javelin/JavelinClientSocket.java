@@ -29,7 +29,6 @@ import org.checkerframework.checker.nullness.qual.*;
 import org.java_websocket.client.*;
 import org.java_websocket.framing.*;
 import org.java_websocket.handshake.*;
-import org.slf4j.*;
 
 final class JavelinClientSocket extends AbstractJavelinSocket {
 
@@ -124,11 +123,6 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
             case CLOSING -> Status.CLOSING;
             default -> Status.CLOSED;
         };
-    }
-
-    @Override
-    protected Logger getLogger() {
-        return logger;
     }
 
     private final class JavelinClientWebSocket extends WebSocketClient {
