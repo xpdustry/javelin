@@ -39,7 +39,7 @@ This tutorial is aimed for non-advanced users looking to create their server net
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
       outgoing events (optional).
 
-    - `fr.xpdustry.javelin.server.always-allow-local-connections` : Allows client to connect without
+    - `fr.xpdustry.javelin.server.always-allow-local-connections` : Allows clients to connect without
       a password if they are on the same network (optional, default is `false`).
 
    Then if you did not enable `always-allow-local-connections` or you did, but you have servers that
@@ -55,10 +55,10 @@ This tutorial is aimed for non-advanced users looking to create their server net
     - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
 
     - `fr.xpdustry.javelin.client.address` to the main javelin server address such
-      as `ws://xpdustry.fr:8080`.
+      as `ws://example.org:port` (if the client is in the network of the server and that `always-allow-local-connections` is enabled, set to `ws://localhost:port`).
 
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
-      outgoing events (optional, **don't exceed your CPU core count**).
+      outgoing events (optional).
 
    If a password is required for the server :
 
@@ -79,10 +79,12 @@ First, add this in your `build.gradle` :
 
 ```groovy
 repositories {
+    // If you want to use the snapshots, the uri is "https://maven.xpdustry.fr/snapshots"
     maven { url = uri("https://maven.xpdustry.fr/releases") }
 }
 
 dependencies {
+    // Don't forget to suffix the version with "-SNAPSHOT" if using the snapshots
     compileOnly("fr.xpdustry:javelin-mindustry:1.2.0")
 }
 ```
@@ -97,10 +99,10 @@ Then, update your `plugin.json` file with :
 }
 ```
 
-In your code, get the socket instance with `Javelin.getJavelinSocket()` (**do not call it
+In your code, get the socket instance with `JavelinPlugin.getJavelinSocket()` (**do not call it
 before `init`**).
 
-> If you use `ExtendedPlugin` of Distributor, call it in `onLoad()`.
+> If you use `ExtendedPlugin` of Distributor, do not call before `onLoad()`.
 
 Now, you can subscribe to the incoming events with `subscribe(event-class, subscriber)` and send
 events with `sendEvent(event)`.
@@ -153,15 +155,56 @@ the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-cor
 
 ### JavaScript
 
-You won't be able to define new `JavelinEvent` types like `JavelinBanEvent`,
-but you can do everything else. Just don't forget to add the following in your `mod.json`.
+For the giga chad programmers making plugins in JavaScript, Javelin is guaranteed to work in V7 (v127+).
+It can be used like in the java example by grabbing the instance on `ServerLoadEvent` with `Vars.mods.getMod("xpdustry-javelin").main`.
 
-```json
-{
-  "dependencies": [
-    "xpdustry-javelin"
-  ]
+If you want to use java defined javelin events, here is an example :
+
+```js
+// If you use "ModLoader" for your plugin depencency resolution, replace the line below with
+// Vars.mods.getMod("xpdustry-mod-loader-plugin").main.getSharedClassLoader()
+const loader = Vars.mods.mainLoader()
+// Here we obtain the event class
+const SomeEvent = java.lang.Class.forName("org.example.plugin.SomeEvent", true, loader)
+// Now we can subscribe to the event
+const javelin = Vars.mods.getMod("xpdustry-javelin").main
+javelin.getJavelinSocket().subscribe(SomeEvent, event => {
+  // Example usage
+  Log.info(event.getSomeData())
+})
+// If you want to send the event, you will need to do it with a relfective operation
+// because "new" doesn't work with classes that are obtained with "Class.forName" and not "Packages"
+let event = SomeEvent.getConstructor(java.lang.String).newInstance("some-name")
+javelin.getJavelinSocket().sendEvent(event)
+```
+
+Now, if you want to define your own events in JavaScript, you can use the provided `JavelinJsonEvent` with some wrapper code :
+
+```js
+// see comment above
+const loader = Vars.mods.mainLoader()
+const JavelinJsonEvent = java.lang.Class.forName("fr.xpdustry.javelin.JavelinJsonEvent", true, loader)
+const javelin = Vars.mods.getMod("xpdustry-javelin").main
+
+function sendEvent(name, event) {
+  const json = JavelinJsonEvent.getConstructors()[0].newInstance(name, JSON.stringify(event))
+  javelin.getJavelinSocket().sendEvent(json)
 }
+
+function subscribe(name, subscriber) {
+  javelin.getJavelinSocket().subscribe(JavelinJsonEvent, event => {
+    if (event.getName().equals(name)) subscriber(JSON.parse(event.getJson()))
+  })
+}
+    
+subscribe("event-name", event => {
+   // Example usage
+   Log.info(event.data)
+})
+
+sendEvent("event-name", {
+  data: "Hello"
+})
 ```
 
 ## Tips
@@ -172,7 +215,7 @@ but you can do everything else. Just don't forget to add the following in your `
   still work, but it will be terribly optimized).
 
 - You can add `wss` support on javelin with a reverse proxy like nginx.
-  Example with let's encrypt / certbot :
+  Example with [certbot](https://certbot.eff.org/) :
 
   ```nginx
   # This is required to upgrade the websocket connection
