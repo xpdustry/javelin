@@ -8,6 +8,4 @@ dependencies {
     implementation("org.slf4j:slf4j-api:2.0.3")
     implementation("com.esotericsoftware.kryo:kryo5:5.3.0")
     implementation("com.password4j:password4j:1.6.2")
-    testRuntimeOnly("org.slf4j:slf4j-simple:2.0.3")
-    testImplementation("org.assertj:assertj-core:3.23.1")
 }

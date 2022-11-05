@@ -54,7 +54,7 @@ public final class JavelinServerSocketTest {
 
     @Test
     void test_clients_with_credentials() {
-        final var server = new JavelinServerSocket(12345, 1, false, authenticator);
+        server = new JavelinServerSocket(12345, 1, false, authenticator);
         authenticator.addUser("client1", "client1");
 
         assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);

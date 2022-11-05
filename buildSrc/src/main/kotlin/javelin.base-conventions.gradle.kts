@@ -17,6 +17,8 @@ dependencies {
     val junit = "5.8.2"
     testImplementation("org.junit.jupiter:junit-jupiter-api:$junit")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:$junit")
+    testRuntimeOnly("org.slf4j:slf4j-simple:2.0.3")
+    testImplementation("org.assertj:assertj-core:3.23.1")
 
     // Static analysis
     compileOnlyApi("org.checkerframework:checker-qual:3.26.0")

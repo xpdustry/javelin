@@ -20,6 +20,7 @@ package fr.xpdustry.javelin;
 
 import static org.assertj.core.api.Assertions.*;
 
+import fr.xpdustry.javelin.JavelinSocket.*;
 import java.net.*;
 import java.time.*;
 import java.util.concurrent.*;
@@ -40,10 +41,20 @@ public final class JavelinClientSocketTest {
 
     @Test
     void test_client_simple() {
+        assertThat(client.getStatus()).isEqualTo(Status.CLOSED);
+        assertThat(server.getStatus()).isEqualTo(Status.CLOSED);
+
         assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
+
+        assertThat(client.getStatus()).isEqualTo(Status.OPEN);
+        assertThat(server.getStatus()).isEqualTo(Status.OPEN);
+
         assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(server.close()).succeedsWithin(DEFAULT_TIMEOUT);
+
+        assertThat(client.getStatus()).isEqualTo(Status.UNUSABLE);
+        assertThat(server.getStatus()).isEqualTo(Status.UNUSABLE);
     }
 
     @Test

@@ -43,7 +43,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
 
     @Override
     public CompletableFuture<Void> start() {
-        if (getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
+        if (getStatus() != Status.UNUSABLE && getStatus() == Status.CLOSED && connecting.compareAndSet(false, true)) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
                 try {
@@ -66,7 +66,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
 
     @Override
     public CompletableFuture<Void> restart() {
-        if (getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
+        if (getStatus() != Status.UNUSABLE && getStatus() != Status.CLOSING && connecting.compareAndSet(false, true)) {
             final var future = new CompletableFuture<Void>();
             ForkJoinPool.commonPool().execute(() -> {
                 try {
@@ -121,7 +121,7 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
         return switch (socket.getReadyState()) {
             case OPEN -> Status.OPEN;
             case CLOSING -> Status.CLOSING;
-            default -> Status.CLOSED;
+            default -> executor.isShutdown() ? Status.UNUSABLE : Status.CLOSED;
         };
     }
 

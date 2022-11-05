@@ -26,7 +26,7 @@ This tutorial is aimed for non-advanced users looking to create their server net
 
 2. Choose a Mindustry server that will host the main Javelin server.
 
-   > I suggest you to choose your hub server or the one with the most RAM and CPU power.
+   > I suggest you to choose your hub server or the one that is the most stable.
 
    Go in the config file of the said server in `./javelin/config.properties` and edit
    the following properties :
@@ -37,15 +37,19 @@ This tutorial is aimed for non-advanced users looking to create their server net
       is `8080`).
 
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
-      outgoing events (optional, **don't exceed your CPU core count**).
+      outgoing events (optional).
 
-   Then in the server console, add users with the command `javelin-user-add <username> <password>`.
+    - `fr.xpdustry.javelin.server.always-allow-local-connections` : Allows client to connect without
+      a password if they are on the same network (optional, default is `false`).
 
-   > Users are saved in a binary file at `./javelin/users.bin.gz`, passwords are salted and hashed.
+   Then if you did not enable `always-allow-local-connections` or you did, but you have servers that
+   aren't in the Javelin server network, you can add them with the command `javelin-user-add <username> <password>`.
+
+   > Users are saved in a binary file at `./javelin/users-v2.bin.gz`, passwords are salted and hashed with Bcrypt.
 
 3. Once it's ready, restart your Mindustry server and your Javelin server should start along it.
 
-4. Now, for each other server where Javelin is installed, edit the following properties in
+4. Now, for each server where Javelin is installed, edit the following properties in
    the config file at `./javelin/config.properties` :
 
     - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
@@ -53,14 +57,16 @@ This tutorial is aimed for non-advanced users looking to create their server net
     - `fr.xpdustry.javelin.client.address` to the main javelin server address such
       as `ws://xpdustry.fr:8080`.
 
-    - `fr.xpdustry.javelin.client.username` to the username you assigned to this server.
-
-    - `fr.xpdustry.javelin.client.password` to the password you assigned to this server.
-
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
       outgoing events (optional, **don't exceed your CPU core count**).
 
-5. Restart all servers and enjoy the wonders of networking.
+   If a password is required for the server :
+
+    - `fr.xpdustry.javelin.client.username` to the username you assigned for this server.
+
+    - `fr.xpdustry.javelin.client.password` to the password you assigned for this server.
+
+6. Restart all servers and enjoy the wonders of simple networking.
 
    > Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
    the [Xpdustry Discord server](https://discord.xpdustry.fr).
@@ -77,7 +83,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly("fr.xpdustry:javelin-mindustry:1.0.0")
+    compileOnly("fr.xpdustry:javelin-mindustry:1.2.0")
 }
 ```
 
@@ -93,6 +99,8 @@ Then, update your `plugin.json` file with :
 
 In your code, get the socket instance with `Javelin.getJavelinSocket()` (**do not call it
 before `init`**).
+
+> If you use `ExtendedPlugin` of Distributor, call it in `onLoad()`.
 
 Now, you can subscribe to the incoming events with `subscribe(event-class, subscriber)` and send
 events with `sendEvent(event)`.
@@ -221,6 +229,6 @@ but you can do everything else. Just don't forget to add the following in your `
 
 ## Testing
 
-- `./gradlew runMindustryClient`: Run the plugin in Mindustry desktop.
+- `./gradlew :javelin-mindustry:runMindustryClient`: Run the plugin in Mindustry desktop.
 
-- `./gradlew runMindustryServer`: Run the plugin in Mindustry server.
+- `./gradlew :javelin-mindustry:runMindustryServer`: Run the plugin in Mindustry server.

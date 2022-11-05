@@ -33,12 +33,10 @@ public final class JavelinPlugin extends Plugin {
     private static final File DIRECTORY = new File("javelin");
     private static final File CONFIG_FILE = new File(DIRECTORY, "config.properties");
 
+    private static JavelinSocket socket = JavelinSocket.noop();
     private static UserAuthenticator authenticator =
             UserAuthenticator.create(new File(DIRECTORY, "users-v2.bin.gz").toPath());
-
     private static @MonotonicNonNull JavelinConfig config = null;
-
-    private static JavelinSocket socket = JavelinSocket.noop();
 
     public static UserAuthenticator getUserAuthenticator() {
         return authenticator;
@@ -61,8 +59,24 @@ public final class JavelinPlugin extends Plugin {
     public void init() {
         DIRECTORY.mkdir();
 
-        config = readConfig();
+        // Load the config
+        final var properties = new Properties();
+        if (CONFIG_FILE.exists()) {
+            try (final var reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
+                properties.load(reader);
+            } catch (final IOException e) {
+                throw new RuntimeException("Invalid config.", e);
+            }
+        } else {
+            try (final var writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
+                PropertiesJavelinConfig.getDefaults().store(writer, null);
+            } catch (final IOException e) {
+                throw new RuntimeException("Can't create default config for Javelin.", e);
+            }
+        }
+        config = new PropertiesJavelinConfig(properties);
 
+        // Setup Javelin
         if (config.getMode() == JavelinConfig.Mode.SERVER) {
             socket = JavelinSocket.server(
                     config.getServerPort(),
@@ -132,26 +146,14 @@ public final class JavelinPlugin extends Plugin {
 
         handler.register("javelin-restart", "Restarts the Javelin socket.", args -> {
             Log.info("The javelin socket will be restarted.");
-            socket.restart();
+            socket.restart().whenComplete((result, throwable) -> {
+                if (throwable != null) {
+                    Log.err("Failed to restart.", throwable);
+                } else {
+                    Log.info("Successfully restarted the socket.");
+                }
+            });
         });
-    }
-
-    private JavelinConfig readConfig() {
-        final var properties = new Properties();
-        if (CONFIG_FILE.exists()) {
-            try (final var reader = new FileReader(CONFIG_FILE, StandardCharsets.UTF_8)) {
-                properties.load(reader);
-            } catch (final IOException e) {
-                throw new RuntimeException("Invalid config.", e);
-            }
-        } else {
-            try (final var writer = new FileWriter(CONFIG_FILE, StandardCharsets.UTF_8)) {
-                PropertiesJavelinConfig.getDefaults().store(writer, null);
-            } catch (final IOException e) {
-                throw new RuntimeException("Can't create default config for Javelin.", e);
-            }
-        }
-        return new PropertiesJavelinConfig(properties);
     }
 
     private static final class JavelinApplicationListener implements ApplicationListener {
@@ -166,17 +168,7 @@ public final class JavelinPlugin extends Plugin {
         @Override
         public void init() {
             socket.start();
-            executor.scheduleWithFixedDelay(
-                    () -> {
-                        Log.debug("Checking Javelin socket status.");
-                        if (socket.getStatus() == Status.CLOSED) {
-                            Log.debug("The Javelin socket is closed, restarting.");
-                            socket.restart();
-                        }
-                    },
-                    5L,
-                    5L,
-                    TimeUnit.MINUTES);
+            executor.scheduleWithFixedDelay(this::checkStatus, 5L, 5L, TimeUnit.MINUTES);
         }
 
         @Override
@@ -186,6 +178,17 @@ public final class JavelinPlugin extends Plugin {
                 socket.close().get(15L, TimeUnit.SECONDS);
             } catch (final InterruptedException | ExecutionException | TimeoutException e) {
                 Log.err("Failed to close the javelin socket", e);
+            }
+        }
+
+        private void checkStatus() {
+            if (socket.getStatus() == Status.CLOSED) {
+                Log.debug("The Javelin socket is closed, restarting.");
+                socket.restart().whenComplete((result, throwable) -> {
+                    if (throwable != null) {
+                        Log.debug("Failed to restart Javelin: @", throwable);
+                    }
+                });
             }
         }
     }

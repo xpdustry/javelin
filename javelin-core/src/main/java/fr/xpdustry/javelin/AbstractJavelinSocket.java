@@ -77,6 +77,10 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
                         .exceptions()
                         .forEach((s, t) -> logger.error("An exception occurred while handling an event in " + s, t));
             }
+        } catch (final KryoException e) {
+            if (!(e.getCause() instanceof ClassNotFoundException)) {
+                throw e;
+            }
         }
     }
 }

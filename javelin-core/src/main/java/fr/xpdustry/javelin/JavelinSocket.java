@@ -51,7 +51,7 @@ public interface JavelinSocket {
     CompletableFuture<Void> start();
 
     default CompletableFuture<Void> restart() {
-        return CompletableFuture.failedFuture(new UnsupportedOperationException());
+        return CompletableFuture.failedFuture(new UnsupportedOperationException("This socket cannot be restarted."));
     }
 
     CompletableFuture<Void> close();
@@ -66,7 +66,8 @@ public interface JavelinSocket {
         OPENING,
         OPEN,
         CLOSING,
-        CLOSED
+        CLOSED,
+        UNUSABLE
     }
 
     interface Subscription {

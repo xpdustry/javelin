@@ -113,8 +113,9 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         public ServerHandshakeBuilder onWebsocketHandshakeReceivedAsServer(
                 final WebSocket conn, final Draft draft, final ClientHandshake request) throws InvalidDataException {
             final var authorization = request.getFieldValue(Internal.AUTHORIZATION_HEADER);
-            final var matcher = Internal.AUTHORIZATION_PATTERN.matcher(authorization);
+            final var matcher = Internal.AUTHORIZATION_REGEX.matcher(authorization);
 
+            // NOTE, In Javelin 2, turn alwaysAllowLocalConnections to a list of allowed IPs
             if (alwaysAllowLocalConnections
                     && conn.getRemoteSocketAddress().getAddress().isLoopbackAddress()) {
                 final var address = conn.getRemoteSocketAddress().getAddress();
@@ -208,7 +209,7 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
         @Override
         public void run() {
             super.run();
-            status.set(Status.CLOSED);
+            status.set(Status.UNUSABLE);
         }
     }
 }

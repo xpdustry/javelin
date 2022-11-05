@@ -18,22 +18,25 @@
  */
 package fr.xpdustry.javelin;
 
-import java.util.*;
-import java.util.regex.*;
-import org.java_websocket.drafts.*;
-import org.java_websocket.extensions.permessage_deflate.*;
-import org.java_websocket.protocols.*;
+/**
+ * For javascript users.
+ * Do not use this class in a java plugin, create yours instead.
+ */
+public final class JavelinJsonEvent implements JavelinEvent {
 
-final class Internal {
+    private final String name;
+    private final String json;
 
-    static final int MAX_EVENT_SIZE = 8192;
+    public JavelinJsonEvent(final String name, final String json) {
+        this.name = name;
+        this.json = json;
+    }
 
-    static final String AUTHORIZATION_HEADER = "Authorization";
-    static final Pattern AUTHORIZATION_REGEX = Pattern.compile("^Basic (.+)$");
+    public String getName() {
+        return name;
+    }
 
-    static Draft getJavelinDraft() {
-        return new Draft_6455(
-                Collections.singletonList(new PerMessageDeflateExtension()),
-                List.of(new Protocol(""), new Protocol("ocpp2.0")));
+    public String getJson() {
+        return json;
     }
 }
