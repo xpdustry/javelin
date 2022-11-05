@@ -19,9 +19,11 @@ repositories {
 }
 
 dependencies {
-    api(project(":javelin-core"))
+    api(project(":javelin-core")) {
+        exclude("org.slf4j")
+    }
     mindustryDependencies()
-    runtimeOnly("org.slf4j:slf4j-simple:2.0.3")
+    runtimeOnly("org.slf4j:slf4j-simple:1.7.36")
 }
 
 toxopid {
@@ -45,7 +47,7 @@ tasks.shadowJar {
     relocate("org.slf4j", "$target.slf4j")
     relocate("com.esotericsoftware.kryo", "$target.kryo")
     relocate("com.password4j", "$target.password4j")
-    minimize()
+    mergeServiceFiles()
 }
 
 // For plugin publishing
