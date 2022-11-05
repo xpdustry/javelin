@@ -21,6 +21,10 @@ Major release with very nice stuff :)
 - Added new socket state for unusable sockets.
 - In `javelin-mindustry`, added command to restart the socket (`javelin-restart`)
 
+### Breaking
+
+- The hashing format of the default `UserAuthenticator` has changed to Bcrypt. All existing users in `javelin-mindustry` are invalid.
+
 ## v1.1.0 - 2022-11-02
 
 ### Features
