@@ -23,6 +23,18 @@ import java.util.*;
 
 public interface UserAuthenticator extends JavelinAuthenticator {
 
+    /**
+     * Creates a new standard {@code UserAuthenticator} instance.
+     * Supported file extensions are :
+     * <ul>
+     *   <li>.bin.gz</li>
+     * </ul>
+     * <br>
+     * Not using these file extensions will throw an exception
+     *
+     * @param path a path for storing the credentials.
+     * @return a new new standard {@code UserAuthenticator} instance
+     */
     static UserAuthenticator create(final Path path) {
         return new SimpleUserAuthenticator(path);
     }

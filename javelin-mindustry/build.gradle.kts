@@ -48,6 +48,9 @@ tasks.shadowJar {
     relocate("com.esotericsoftware.kryo", "$target.kryo")
     relocate("com.password4j", "$target.password4j")
     mergeServiceFiles()
+    minimize {
+        exclude(dependency("org.slf4j:.*:.*"))
+    }
 }
 
 // For plugin publishing

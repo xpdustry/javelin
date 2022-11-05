@@ -21,6 +21,5 @@ package fr.xpdustry.javelin;
 @FunctionalInterface
 public interface JavelinAuthenticator {
 
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     boolean authenticate(final String username, final char[] password);
 }
