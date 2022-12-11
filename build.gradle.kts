@@ -2,5 +2,5 @@ plugins {
     id("javelin.parent-conventions")
 }
 group = "fr.xpdustry"
-version = "1.2.0" + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
+version = "1.2.1" + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
 description = "A simple communication protocol for broadcasting events on a network."

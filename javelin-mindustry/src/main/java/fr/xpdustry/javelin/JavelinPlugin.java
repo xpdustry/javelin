@@ -95,9 +95,7 @@ public final class JavelinPlugin extends Plugin {
             }
         }
 
-        if (config.isAutoRestartEnabled()) {
-            Core.app.addListener(new JavelinApplicationListener(socket));
-        }
+        Core.app.addListener(new JavelinApplicationListener(socket));
     }
 
     @Override
@@ -168,7 +166,9 @@ public final class JavelinPlugin extends Plugin {
         @Override
         public void init() {
             socket.start();
-            executor.scheduleWithFixedDelay(this::checkStatus, 5L, 5L, TimeUnit.MINUTES);
+            if (config.isAutoRestartEnabled()) {
+                executor.scheduleWithFixedDelay(this::checkStatus, 5L, 5L, TimeUnit.MINUTES);
+            }
         }
 
         @Override
