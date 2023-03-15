@@ -1,6 +1,6 @@
 Javelin, a simple communication protocol for broadcasting events on a network.
 
-Copyright (C) 2022 Xpdustry
+Copyright (C) 2023 Xpdustry
 
 This program is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
