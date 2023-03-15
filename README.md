@@ -19,16 +19,16 @@ This plugin is compatible with V6 and V7.
 
 ## Setup
 
-This tutorial is aimed for non-advanced users looking to create their server network very easily :
+This tutorial is aimed for non-advanced users looking to create a simple mindustry network :
 
-1. Install the plugin in all the servers you wish to link and start them, it will create the
+1. Install the plugin in all servers you wish to link and start them, it will create the
    necessary config files in the `./javelin` directory.
 
-2. Choose a Mindustry server that will host the main Javelin server.
+2. Choose a Mindustry server that will host the Javelin server.
 
    > I suggest you to choose your hub server or the one that is the most stable.
 
-   Go in the config file of the said server in `./javelin/config.properties` and edit
+   Go in the config file of that Mindustry server in `./javelin/config.properties` and edit
    the following properties :
 
     - `fr.xpdustry.javelin.socket.mode` to `SERVER`.
@@ -37,25 +37,25 @@ This tutorial is aimed for non-advanced users looking to create their server net
       is `8080`).
 
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
-      outgoing events (optional).
+      outgoing messages (optional).
 
-    - `fr.xpdustry.javelin.server.always-allow-local-connections` : Allows clients to connect without
-      a password if they are on the same network (optional, default is `false`).
+    - `fr.xpdustry.javelin.server.always-allow-local-connections` : Allows clients to connect
+      without a password if they are on the same machine as the server (optional, default
+      is `false`).
 
-   Then if you did not enable `always-allow-local-connections` or you did, but you have servers that
-   aren't in the Javelin server network, you can add them with the command `javelin-user-add <username> <password>`.
+      > If this option is not enabled, or it's enabled but the client is not on the same machine,
+      add them with the command `javelin-user-add <username> <password>`.
 
-   > Users are saved in a binary file at `./javelin/users-v2.bin.gz`, passwords are salted and hashed with Bcrypt.
+3. Once your main Mindustry server is ready, restart it and your Javelin server should start too.
 
-3. Once it's ready, restart your Mindustry server and your Javelin server should start along it.
-
-4. Now, for each server where Javelin is installed, edit the following properties in
-   the config file at `./javelin/config.properties` :
+4. Now, for each "client" server, edit the following properties in the config file
+   at `./javelin/config.properties` :
 
     - `fr.xpdustry.javelin.socket.mode` to `CLIENT`.
 
     - `fr.xpdustry.javelin.client.address` to the main javelin server address such
-      as `ws://example.org:port` (if the client is in the network of the server and that `always-allow-local-connections` is enabled, set to `ws://localhost:port`).
+      as `ws://example.org:port` (or `ws://localhost:port` if the client is running in the same
+      machine as the server and that `always-allow-local-connections` is enabled).
 
     - `fr.xpdustry.javelin.socket.workers` : The number of threads handling the incoming and
       outgoing events (optional).
@@ -66,10 +66,10 @@ This tutorial is aimed for non-advanced users looking to create their server net
 
     - `fr.xpdustry.javelin.client.password` to the password you assigned for this server.
 
-6. Restart all servers and enjoy the wonders of simple networking.
+6. Restart all "client" servers and enjoy the wonders of simple networking.
 
-   > Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
-   the [Xpdustry Discord server](https://discord.xpdustry.fr).
+> Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
+> the [Xpdustry Discord server](https://discord.xpdustry.fr).
 
 ## Usage
 
@@ -79,9 +79,9 @@ First, add this in your `build.gradle` :
 
 ```groovy
 repositories {
-   maven { url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
-   // If you want to use the snapshots, replace the uri with "https://maven.xpdustry.fr/snapshots"
-   maven { url = uri("https://maven.xpdustry.fr/releases") }
+    maven { url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
+    // If you want to use the snapshots, replace the uri with "https://maven.xpdustry.fr/snapshots"
+    maven { url = uri("https://maven.xpdustry.fr/releases") }
 }
 
 dependencies {
@@ -156,8 +156,10 @@ the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-cor
 
 ### JavaScript
 
-For the giga chad programmers making plugins in JavaScript, Javelin is guaranteed to work in V7 (v127+).
-It can be used like in the java example by grabbing the instance on `ServerLoadEvent` with `Vars.mods.getMod("xpdustry-javelin").main`.
+For the giga chad programmers making plugins in JavaScript,
+Javelin is guaranteed to work in V7 (v127+).
+It can be used like in the java example by grabbing the instance on `ServerLoadEvent`
+with `Vars.mods.getMod("xpdustry-javelin").main`.
 
 If you want to use java defined javelin events, here is an example :
 
@@ -179,12 +181,14 @@ let event = SomeEvent.getConstructor(java.lang.String).newInstance("some-name")
 javelin.getJavelinSocket().sendEvent(event)
 ```
 
-Now, if you want to define your own events in JavaScript, you can use the provided `JavelinJsonEvent` with some wrapper code :
+Now, if you want to define your own events in JavaScript, you can use the
+provided `JavelinJsonEvent` with some wrapper code :
 
 ```js
 // see comment above
 const loader = Vars.mods.mainLoader()
-const JavelinJsonEvent = java.lang.Class.forName("fr.xpdustry.javelin.JavelinJsonEvent", true, loader)
+const JavelinJsonEvent = java.lang.Class.forName("fr.xpdustry.javelin.JavelinJsonEvent", true,
+    loader)
 const javelin = Vars.mods.getMod("xpdustry-javelin").main
 
 function sendEvent(name, event) {
@@ -197,10 +201,10 @@ function subscribe(name, subscriber) {
     if (event.getName().equals(name)) subscriber(JSON.parse(event.getJson()))
   })
 }
-    
+
 subscribe("event-name", event => {
-   // Example usage
-   Log.info(event.data)
+  // Example usage
+  Log.info(event.data)
 })
 
 sendEvent("event-name", {
@@ -208,12 +212,15 @@ sendEvent("event-name", {
 })
 ```
 
-## Tips
+## Notes
 
-- The socket isn't reusable, **do not start nor close it yourself** !!!
+- The Javelin socket isn't reusable, **do not start nor close it yourself** !!!
 
-- Javelin does not support Arc collections such as `Seq`, `ObjectMap`, ... (it may
-  still work, but it will be terribly optimized).
+- If you manage your servers in bulk, you can force them to wait for the javelin server
+  to open with the `fr.xpdustry.javelin.socket.initial-connection-timeout` property (in seconds).
+
+- Javelin does not currently have a way to customize the serialization of events, so make sure to
+  only use simple java objects in your event classes.
 
 - You can add `wss` support on javelin with a reverse proxy like nginx.
   Example with [certbot](https://certbot.eff.org/) :
@@ -268,8 +275,8 @@ sendEvent("event-name", {
 
 - `./gradlew :javelin-mindustry:jar` for a simple jar that contains only the plugin code.
 
-- `./gradlew :javelin-mindustry:shadowJar` for a fatJar that contains the plugin and its dependencies (use this for
-  your server).
+- `./gradlew :javelin-mindustry:shadowJar` for a fatJar that contains the plugin and its
+  dependencies (use this for your server).
 
 ## Testing
 
