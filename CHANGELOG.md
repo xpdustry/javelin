@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## v1.2.1 - 2022-12-11
+
+### Bugfix
+
+- Fix a bug where disabling auto-restart in `javelin-mindustry` causes the socket to not start.
+
 ## v1.2.0 - 2022-11-05
 
 Major release with very nice stuff :)
