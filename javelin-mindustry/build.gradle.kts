@@ -32,6 +32,7 @@ toxopid {
 }
 
 tasks.shadowJar {
+    archiveFileName.set(metadata.displayName + ".jar")
     doFirst {
         val temp = temporaryDir.resolve("plugin.json")
         temp.writeText(metadata.toJson(true))
@@ -60,4 +61,8 @@ tasks.register("getArtifactPath") {
 
 tasks.build {
     dependsOn(tasks.shadowJar)
+}
+
+tasks.runMindustryClient {
+    mods.setFrom()
 }

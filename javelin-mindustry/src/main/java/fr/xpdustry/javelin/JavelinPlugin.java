@@ -20,6 +20,7 @@ package fr.xpdustry.javelin;
 
 import arc.*;
 import arc.util.*;
+import fr.xpdustry.javelin.JavelinConfig.*;
 import fr.xpdustry.javelin.JavelinSocket.*;
 import java.io.*;
 import java.nio.charset.*;
@@ -95,7 +96,9 @@ public final class JavelinPlugin extends Plugin {
             }
         }
 
-        Core.app.addListener(new JavelinApplicationListener(socket));
+        if (config.getMode() != Mode.NONE) {
+            Core.app.addListener(new JavelinApplicationListener(socket));
+        }
     }
 
     @Override
@@ -165,7 +168,12 @@ public final class JavelinPlugin extends Plugin {
 
         @Override
         public void init() {
-            socket.start();
+            Log.debug("Attempting initial start of the Javelin socket");
+            try {
+                socket.start().get(config.getInitialConnectionTimeout(), TimeUnit.SECONDS);
+            } catch (final InterruptedException | ExecutionException | TimeoutException e) {
+                Log.err("Failed initial start of the Javelin socket.", e);
+            }
             if (config.isAutoRestartEnabled()) {
                 executor.scheduleWithFixedDelay(this::checkStatus, 5L, 5L, TimeUnit.MINUTES);
             }

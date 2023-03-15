@@ -42,6 +42,10 @@ public interface JavelinConfig {
         return true;
     }
 
+    default int getInitialConnectionTimeout() {
+        return 3;
+    }
+
     enum Mode {
         NONE,
         SERVER,
