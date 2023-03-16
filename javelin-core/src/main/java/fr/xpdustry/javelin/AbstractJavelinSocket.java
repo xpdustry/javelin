@@ -46,6 +46,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
         if (this.getStatus() != Status.OPEN) {
             return CompletableFuture.failedFuture(new IOException("The socket is not open."));
         } else {
+            if (bus.subscribed(event.getClass())) bus.post(event);
             try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
                 kryo.writeClass(output, event.getClass());
                 kryo.writeObject(output, event);
