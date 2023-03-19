@@ -25,23 +25,42 @@ import java.util.function.*;
 public interface JavelinSocket {
 
     static JavelinSocket server(final int port, final int workers, final JavelinAuthenticator authenticator) {
-        return new JavelinServerSocket(port, workers, false, authenticator);
+        return new JavelinServerSocket(port, workers, false, authenticator, false);
     }
 
     static JavelinSocket server(
             final int port,
             final int workers,
-            boolean alwaysAllowLocalConnections,
+            final boolean alwaysAllowLocalConnections,
             final JavelinAuthenticator authenticator) {
-        return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator);
+        return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator, false);
+    }
+
+    static JavelinSocket server(
+            final int port,
+            final int workers,
+            final boolean alwaysAllowLocalConnections,
+            final JavelinAuthenticator authenticator,
+            final boolean enableLocalBroadcast) {
+        return new JavelinServerSocket(port, workers, alwaysAllowLocalConnections, authenticator, enableLocalBroadcast);
     }
 
     static JavelinSocket client(final URI serverUri, final String username, final char[] password, final int workers) {
-        return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password));
+        return new JavelinClientSocket(serverUri, workers, new PasswordAuthentication(username, password), false);
     }
 
     static JavelinSocket client(final URI serverUri, final int workers) {
-        return new JavelinClientSocket(serverUri, workers, null);
+        return new JavelinClientSocket(serverUri, workers, null, false);
+    }
+
+    static JavelinSocket client(
+            final URI serverUri,
+            final String username,
+            final char[] password,
+            final int workers,
+            final boolean enableLocalBroadcast) {
+        return new JavelinClientSocket(
+                serverUri, workers, new PasswordAuthentication(username, password), enableLocalBroadcast);
     }
 
     static JavelinSocket noop() {

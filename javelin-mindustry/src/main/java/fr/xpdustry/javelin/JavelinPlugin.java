@@ -83,7 +83,8 @@ public final class JavelinPlugin extends Plugin {
                     config.getServerPort(),
                     config.getWorkerCount(),
                     config.alwaysAllowLocalConnections(),
-                    authenticator);
+                    authenticator,
+                    config.isLocalBroadcastEnabled());
         } else if (config.getMode() == JavelinConfig.Mode.CLIENT) {
             if (config.getClientUsername().isBlank()) {
                 socket = JavelinSocket.client(config.getClientServerUri(), config.getWorkerCount());
@@ -92,7 +93,8 @@ public final class JavelinPlugin extends Plugin {
                         config.getClientServerUri(),
                         config.getClientUsername(),
                         config.getClientPassword(),
-                        config.getWorkerCount());
+                        config.getWorkerCount(),
+                        config.isLocalBroadcastEnabled());
             }
         }
 

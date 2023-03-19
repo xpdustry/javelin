@@ -46,6 +46,10 @@ public interface JavelinConfig {
         return 3;
     }
 
+    default boolean isLocalBroadcastEnabled() {
+        return false;
+    }
+
     enum Mode {
         NONE,
         SERVER,

@@ -31,7 +31,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
             WORKERS_KEY = "fr.xpdustry.javelin.socket.workers",
             ALWAYS_ALLOW_LOCAL_CONNECTIONS = "fr.xpdustry.javelin.server.always-allow-local-connections",
             AUTO_RESTART = "fr.xpdustry.javelin.socket.auto-restart",
-            INITIAL_CONNECTION_TIMEOUT = "fr.xpdustry.javelin.socket.initial-connection-timeout";
+            INITIAL_CONNECTION_TIMEOUT = "fr.xpdustry.javelin.socket.initial-connection-timeout",
+            LOCAL_BROADCAST = "fr.xpdustry.javelin.socket.local-broadcast";
 
     private static final Properties DEFAULTS = new Properties();
 
@@ -45,7 +46,8 @@ final class PropertiesJavelinConfig implements JavelinConfig {
                 WORKERS_KEY, "1",
                 ALWAYS_ALLOW_LOCAL_CONNECTIONS, "false",
                 AUTO_RESTART, "true",
-                INITIAL_CONNECTION_TIMEOUT, "3"));
+                INITIAL_CONNECTION_TIMEOUT, "3",
+                LOCAL_BROADCAST, "false"));
     }
 
     private final Properties properties;
@@ -102,5 +104,10 @@ final class PropertiesJavelinConfig implements JavelinConfig {
     @Override
     public int getInitialConnectionTimeout() {
         return Integer.parseInt(properties.getProperty(INITIAL_CONNECTION_TIMEOUT));
+    }
+
+    @Override
+    public boolean isLocalBroadcastEnabled() {
+        return Boolean.parseBoolean(properties.getProperty(LOCAL_BROADCAST));
     }
 }
