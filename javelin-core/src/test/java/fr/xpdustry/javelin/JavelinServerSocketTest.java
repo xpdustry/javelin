@@ -37,7 +37,7 @@ public final class JavelinServerSocketTest {
     @BeforeEach
     void setup() {
         authenticator = new TestJavelinAuthenticator();
-        server = new JavelinServerSocket(12345, 1, true, authenticator);
+        server = new JavelinServerSocket(12345, 1, true, authenticator, false);
         client1 = createClient("client1");
         client2 = createClient("client2");
     }
@@ -54,7 +54,7 @@ public final class JavelinServerSocketTest {
 
     @Test
     void test_clients_with_credentials() {
-        server = new JavelinServerSocket(12345, 1, false, authenticator);
+        server = new JavelinServerSocket(12345, 1, false, authenticator, false);
         authenticator.addUser("client1", "client1");
 
         assertThat(server.start()).succeedsWithin(DEFAULT_TIMEOUT);
@@ -124,7 +124,7 @@ public final class JavelinServerSocketTest {
 
     @Test
     void test_same_user_connection() {
-        final var server = new JavelinServerSocket(12345, 1, false, authenticator);
+        final var server = new JavelinServerSocket(12345, 1, false, authenticator, false);
         authenticator.addUser("client1", "client1");
 
         final var client1A = createClient("client1");
@@ -139,6 +139,6 @@ public final class JavelinServerSocketTest {
 
     private JavelinClientSocket createClient(final String name) {
         return new JavelinClientSocket(
-                URI.create("ws://localhost:12345"), 1, new PasswordAuthentication(name, name.toCharArray()));
+                URI.create("ws://localhost:12345"), 1, new PasswordAuthentication(name, name.toCharArray()), false);
     }
 }

@@ -33,6 +33,7 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
     protected final Logger logger = LoggerFactory.getLogger(this.getClass());
     private final EventBus<JavelinEvent> bus = EventBus.create(JavelinEvent.class);
     private final Kryo kryo = new Kryo();
+    private final boolean enableLocalBroadcast;
 
     {
         kryo.setRegistrationRequired(false);
@@ -41,12 +42,18 @@ abstract class AbstractJavelinSocket implements JavelinSocket {
         kryo.setInstantiatorStrategy(new StdInstantiatorStrategy());
     }
 
+    AbstractJavelinSocket(final boolean enableLocalBroadcast) {
+        this.enableLocalBroadcast = enableLocalBroadcast;
+    }
+
     @Override
     public <E extends JavelinEvent> CompletableFuture<Void> sendEvent(final E event) {
         if (this.getStatus() != Status.OPEN) {
             return CompletableFuture.failedFuture(new IOException("The socket is not open."));
         } else {
-            if (bus.subscribed(event.getClass())) bus.post(event);
+            if (enableLocalBroadcast && bus.subscribed(event.getClass())) {
+                bus.post(event);
+            }
             try (final var output = new ByteBufferOutput(ByteBuffer.allocate(Internal.MAX_EVENT_SIZE))) {
                 kryo.writeClass(output, event.getClass());
                 kryo.writeObject(output, event);

@@ -41,7 +41,9 @@ final class JavelinServerSocket extends AbstractJavelinSocket {
             final int port,
             final int workers,
             final boolean alwaysAllowLocalConnections,
-            final JavelinAuthenticator authenticator) {
+            final JavelinAuthenticator authenticator,
+            final boolean enableLocalBroadcast) {
+        super(enableLocalBroadcast);
         this.socket = new JavelinServerWebSocket(port, workers, authenticator);
         this.alwaysAllowLocalConnections = alwaysAllowLocalConnections;
     }
