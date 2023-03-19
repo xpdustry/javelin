@@ -37,22 +37,13 @@ jobs:
         run: ./gradlew build
 
       - name: Set up Artifact Upload
-        run: echo "ARTIFACT_PATH=$(./gradlew getArtifactPath -q)" >> $GITHUB_ENV
+        run: echo "MINDUSTRY_ARTIFACT_PATH=$(./gradlew :javelin-mindustry:getArtifactPath -q)" >> $GITHUB_ENV
 
-      - name: Upload Artifact to Actions
+      - name: Upload Artifact to Actions (Mindustry)
         uses: actions/upload-artifact@v3
         with:
           name: ${{ github.event.repository.name }}
-          path: ${{ env.ARTIFACT_PATH }}
-
-      - name: Publish to Xpdustry
-        if: ${{ github.event_name != 'pull_request' }}
-        run: ./gradlew publish
-        env:
-          ORG_GRADLE_PROJECT_xpdustryUsername: "${{ secrets.XPDUSTRY_MAVEN_USERNAME }}"
-          ORG_GRADLE_PROJECT_xpdustryPassword: "${{ secrets.XPDUSTRY_MAVEN_PASSWORD }}"
-          ORG_GRADLE_PROJECT_signingKey: "${{ secrets.XPDUSTRY_MAVEN_SIGNING_KEY }}"
-          ORG_GRADLE_PROJECT_signingPassword: "${{ secrets.XPDUSTRY_MAVEN_SIGNING_PASSWORD }}"
+          path: ${{ env.MINDUSTRY_ARTIFACT_PATH }}
 
       - name: Determine Status
         run: |
@@ -62,13 +53,22 @@ jobs:
             echo "STATUS=release" >> $GITHUB_ENV
           fi
 
-      - name: Upload Artifact to Release (Core)
-        if: "${{ env.STATUS == 'release' }}"
+      - name: Publish to Xpdustry
+        if: ${{ env.STATUS == 'release' || startsWith(github.ref, 'refs/heads/master') }}
+        run: ./gradlew publish
+        env:
+          ORG_GRADLE_PROJECT_xpdustryUsername: "${{ secrets.XPDUSTRY_MAVEN_USERNAME }}"
+          ORG_GRADLE_PROJECT_xpdustryPassword: "${{ secrets.XPDUSTRY_MAVEN_PASSWORD }}"
+          ORG_GRADLE_PROJECT_signingKey: "${{ secrets.XPDUSTRY_MAVEN_SIGNING_KEY }}"
+          ORG_GRADLE_PROJECT_signingPassword: "${{ secrets.XPDUSTRY_MAVEN_SIGNING_PASSWORD }}"
+
+      - name: Upload Artifact to Release (Mindustry)
+        if: ${{ env.STATUS == 'release' && github.event_name == 'release' }}
         uses: svenstaro/upload-release-action@v2
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           asset_name: ${{ github.event.repository.name }}.jar
-          file: ${{ env.ARTIFACT_PATH }}
+          file: ${{ env.MINDUSTRY_ARTIFACT_PATH }}
           tag: ${{ github.ref }}
 
       - name: Update Changelog
