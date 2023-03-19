@@ -35,8 +35,8 @@ public final class JavelinClientSocketTest {
 
     @BeforeEach
     void setup() {
-        server = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
-        client = new JavelinClientSocket(URI.create("ws://localhost:12345"), 1, null);
+        server = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator(), false);
+        client = new JavelinClientSocket(URI.create("ws://localhost:12345"), 1, null, false);
     }
 
     @Test
@@ -68,12 +68,12 @@ public final class JavelinClientSocketTest {
 
     @Test
     void test_client_restart_with_server() {
-        final var server1 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
+        final var server1 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator(), false);
         assertThat(server1.start()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(client.start()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(server1.close()).succeedsWithin(DEFAULT_TIMEOUT);
 
-        final var server2 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator());
+        final var server2 = new JavelinServerSocket(12345, 1, true, new TestJavelinAuthenticator(), false);
         assertThat(server2.start()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(client.restart()).succeedsWithin(DEFAULT_TIMEOUT);
         assertThat(client.close()).succeedsWithin(DEFAULT_TIMEOUT);

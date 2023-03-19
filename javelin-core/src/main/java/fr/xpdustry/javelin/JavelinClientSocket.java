@@ -36,7 +36,12 @@ final class JavelinClientSocket extends AbstractJavelinSocket {
     private final ExecutorService executor;
     private final JavelinClientWebSocket socket;
 
-    JavelinClientSocket(final URI serverUri, final int workers, final @Nullable PasswordAuthentication authentication) {
+    JavelinClientSocket(
+            final URI serverUri,
+            final int workers,
+            final @Nullable PasswordAuthentication authentication,
+            final boolean enableLocalBroadcast) {
+        super(enableLocalBroadcast);
         this.executor = Executors.newFixedThreadPool(workers);
         this.socket = new JavelinClientWebSocket(serverUri, authentication);
     }
