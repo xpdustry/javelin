@@ -3,5 +3,5 @@ plugins {
 }
 
 group = "fr.xpdustry"
-version = "1.3.0" + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
-description = "A simple communication protocol for broadcasting events on a network."
+version = "2.0.0" + if (indraGit.headTag() == null) "-SNAPSHOT" else ""
+description = "A simple messaging library for inter-server communication."
