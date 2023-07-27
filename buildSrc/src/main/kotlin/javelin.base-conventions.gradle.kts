@@ -50,12 +50,12 @@ indra {
         minimumToolchain(17)
     }
 
-    publishReleasesTo("xpdustry", "https://maven.xpdustry.fr/releases")
-    publishSnapshotsTo("xpdustry", "https://maven.xpdustry.fr/snapshots")
+    publishReleasesTo("xpdustry", "https://maven.xpdustry.com/releases")
+    publishSnapshotsTo("xpdustry", "https://maven.xpdustry.com/snapshots")
 
     gpl3OnlyLicense()
 
-    github("Xpdustry", "Javelin") {
+    github("xpdustry", "javelin") {
         ci(true)
         issues(true)
         scm(true)
@@ -65,7 +65,7 @@ indra {
         pom {
             organization {
                 name.set("Xpdustry")
-                url.set("https://www.xpdustry.fr")
+                url.set("https://www.xpdustry.com")
             }
 
             developers {

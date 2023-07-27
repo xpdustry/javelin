@@ -2,7 +2,7 @@
 
 [![Build status](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml)
 [![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://maven.xpdustry.fr/api/badge/latest/releases/fr/xpdustry/javelin-core?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
+[![Xpdustry latest](https://maven.xpdustry.com/api/badge/latest/releases/fr/xpdustry/javelin-core?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
 
 ## Description
 
@@ -69,7 +69,7 @@ This tutorial is aimed for non-advanced users looking to create a simple mindust
 6. Restart all "client" servers and enjoy the wonders of simple networking.
 
 > Having problems ? Don't mind asking help to the maintainers in the **#support** channel of
-> the [Xpdustry Discord server](https://discord.xpdustry.fr).
+> the [Xpdustry Discord server](https://discord.xpdustry.com).
 
 ## Usage
 
@@ -80,8 +80,8 @@ First, add this in your `build.gradle` :
 ```groovy
 repositories {
     maven { url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots/") }
-    // If you want to use the snapshots, replace the uri with "https://maven.xpdustry.fr/snapshots"
-    maven { url = uri("https://maven.xpdustry.fr/releases") }
+    // If you want to use the snapshots, replace the uri with "https://maven.xpdustry.com/snapshots"
+    maven { url = uri("https://maven.xpdustry.com/releases") }
 }
 
 dependencies {
@@ -152,7 +152,7 @@ public final class BanSynchronizer extends Plugin {
 ```
 
 More info in
-the [Javadoc](https://maven.xpdustry.fr/javadoc/releases/fr/xpdustry/javelin-core/latest).
+the [Javadoc](https://maven.xpdustry.com/javadoc/releases/fr/xpdustry/javelin-core/latest).
 
 ### JavaScript
 
