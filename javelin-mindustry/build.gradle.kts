@@ -1,7 +1,4 @@
-import fr.xpdustry.toxopid.ModPlatform
-import fr.xpdustry.toxopid.util.ModMetadata
-import fr.xpdustry.toxopid.util.anukenJitpack
-import fr.xpdustry.toxopid.util.mindustryDependencies
+import fr.xpdustry.toxopid.dsl.mindustryDependencies
 
 plugins {
     id("javelin.base-conventions")
@@ -9,13 +6,21 @@ plugins {
     id("fr.xpdustry.toxopid")
 }
 
-val metadata = ModMetadata.fromJson(file("${project.projectDir}/plugin.json"))
+val metadata = fr.xpdustry.toxopid.spec.ModMetadata.fromJson(file("${project.projectDir}/plugin.json"))
 metadata.version = project.version.toString()
 metadata.description = project.description.toString()
 
+toxopid {
+    compileVersion.set("v" + metadata.minGameVersion)
+    platforms.add(fr.xpdustry.toxopid.spec.ModPlatform.HEADLESS)
+}
+
 repositories {
     mavenCentral()
-    anukenJitpack()
+    maven("https://maven.xpdustry.com/anuken") {
+        name = "xpdustry-anuken"
+        mavenContent { releasesOnly() }
+    }
 }
 
 dependencies {
@@ -26,13 +31,8 @@ dependencies {
     runtimeOnly("org.slf4j:slf4j-simple:1.7.36")
 }
 
-toxopid {
-    compileVersion.set("v" + metadata.minGameVersion)
-    platforms.add(ModPlatform.HEADLESS)
-}
-
 tasks.shadowJar {
-    archiveFileName.set(metadata.displayName + ".jar")
+    archiveFileName.set("javelin.jar")
     doFirst {
         val temp = temporaryDir.resolve("plugin.json")
         temp.writeText(metadata.toJson(true))

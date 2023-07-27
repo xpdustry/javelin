@@ -14,7 +14,7 @@ enabling powerful features such as global chats, synced moderation, discord inte
 This plugin is compatible with V6 and V7.
 
 > If you run on v135 or lower, you will
-> need [mod-loader](https://github.com/Xpdustry/ModLoaderPlugin)
+> need [mod-loader](https://github.com/xpdustry/mod-loader)
 > for the dependency resolution.
 
 ## Setup

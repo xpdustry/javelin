@@ -1,10 +1,10 @@
 {
   "name": "xpdustry-javelin",
   "displayName": "Javelin",
-  "author": "Xpdustry",
+  "author": "xpdustry",
   "minGameVersion": "126",
   "hidden": true,
   "java": true,
   "main": "fr.xpdustry.javelin.JavelinPlugin",
-  "repo": "Xpdustry/Javelin"
+  "repo": "xpdustry/javelin"
 }
