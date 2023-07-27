@@ -1,10 +1,15 @@
-# Javelin
+# javelin
 
-[![Build status](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml)
+[![Build status](https://github.com/Xpdustry/Javelin/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/xpdustry/javelin/actions/workflows/build.yml)
 [![Mindustry 6.0 | 7.0 ](https://img.shields.io/badge/Mindustry-6.0%20%7C%207.0-ffd37f)](https://github.com/Anuken/Mindustry/releases)
-[![Xpdustry latest](https://maven.xpdustry.com/api/badge/latest/releases/fr/xpdustry/javelin-core?color=00FFFF&name=Javelin&prefix=v)](https://github.com/Xpdustry/Javelin/releases)
+[![Xpdustry latest](https://maven.xpdustry.com/api/badge/latest/releases/fr/xpdustry/javelin-core?color=00FFFF&name=javelin&prefix=v)](https://github.com/xpdustry/javelin/releases)
 
 ## Description
+
+> **Warning:**
+> This project is no longer maintained since we are no longer using it internally.
+> Please use a proper message broker such as RabbitMQ.
+> If you have difficulties migrating, don't hesitate to ask for help on our [Discord server](https://discord.xpdustry.com).
 
 A simple and fast communication protocol for your internal network or Mindustry servers,
 enabling powerful features such as global chats, synced moderation, discord integrations, etc...
